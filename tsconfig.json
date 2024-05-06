@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "newLine": "lf",
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitOverride": false,
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "module": "CommonJS",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "rootDir": ".",
+    "paths": {
+      "~common": ["src/common/index.ts"],
+      "~utils": ["src/fn-components/utils/index.ts"],
+      "~symbols": ["src/ioc/core.ioc.symbols.ts"],
+      "~container": ["src/ioc/core.ioc.ts"],
+      "~types": ["types/index.d.ts"],
+      "~packages": ["src/packages.ts"],
+      "~fn-components": ["src/fn-components/index.ts"],
+      "~ba-communication": ["src/ba-communication/index.ts"]
+    }
+  },
+  "include": ["./src/**/*.ts"],
+  "exclude": ["node_modules", "dist",
+    ".test-development/index.ts"
+  ],
+}

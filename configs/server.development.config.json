@@ -1,0 +1,15 @@
+{
+  "adapters": {
+    "http": {
+      "enable": true
+    }
+  },
+  "connectors": {
+    "redis": {
+      "enable": true
+    },
+    "typeorm": {
+      "enable": true
+    }
+  }
+}
