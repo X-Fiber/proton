@@ -14,7 +14,8 @@ import {
   ExtendedRecordObject,
   FnObject,
 } from "../utils";
-import { NAbstractHttpAdapter } from "../adapters";
+import { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
+import { NContextService } from "./context.service";
 
 export interface ISchemaService extends IAbstractService {
   readonly schema: NSchemaService.BusinessScheme;
@@ -79,13 +80,6 @@ export namespace NSchemaService {
     | "number[]"
     | "boolean"
     | "boolean[]";
-  export type QueryTypeParameter =
-    | string
-    | string[]
-    | number
-    | number[]
-    | boolean
-    | boolean[];
 
   export type QueryParams = {
     name: string;
@@ -109,7 +103,7 @@ export namespace NSchemaService {
     kind: EventKind;
     scope: AuthScope;
     version: Version;
-    handler: any;
+    handler: NAbstractWsAdapter.Handler;
   };
 
   export type TypeormEntities = Map<string, Typeorm.EntitySchema<unknown>>;

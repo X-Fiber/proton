@@ -334,12 +334,14 @@ export namespace Nodemailer {
 
 export namespace Ws {
   export type WebSocketServer = ws.WebSocketServer;
-  export type WebSocket<T = Record<string, unknown>> = ws.WebSocket & {
-    uuid: string;
-    sessionId?: string;
-    userId?: string;
-    sessionInfo?: T;
+
+  export type FiberSticky = {
+    $__fiber__: {
+      connectionId: string;
+      serverTag: string;
+    };
   };
+  export type WebSocket = ws.WebSocket & FiberSticky;
   export type RawData = ws.RawData;
 }
 

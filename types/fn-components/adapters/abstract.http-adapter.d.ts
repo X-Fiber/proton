@@ -5,6 +5,7 @@ import {
   NDiscoveryService,
   NSchemaService,
 } from "../services";
+import { AuthScope } from "../services/schema.service";
 
 export interface IAbstractHttpAdapter {
   start(): Promise<void>;
@@ -34,27 +35,9 @@ export namespace NAbstractHttpAdapter {
 
   export type Config = Pick<
     NDiscoveryService.CoreConfig["adapters"]["http"],
-    "enable" | "kind" | "serverTag" | "protocol" | "host" | "port" | "urls"
-  >;
-
-  export type Context<
-    USER_INFO = any,
-    SYSTEM_INFO = any,
-    AUTH_SCOPE extends NSchemaService.AuthScope = NSchemaService.AuthScope
-  > = {
-    store: NContextService.Store;
-  } & (AUTH_SCOPE extends "public:route"
-    ? {}
-    : AUTH_SCOPE extends "private:user"
-    ? {
-        user: USER_INFO;
-      }
-    : AUTH_SCOPE extends "private:system"
-    ? {
-        user: USER_INFO;
-        system: SYSTEM_INFO;
-      }
-    : never);
+    "enable" | "kind" | "protocol" | "host" | "port" | "urls"
+  > &
+    Pick<NDiscoveryService.CoreConfig["adapters"], "serverTag">;
 
   export type Request<
     BODY = any,
@@ -96,16 +79,28 @@ export namespace NAbstractHttpAdapter {
     | JsonResponse<BODY, HEADERS>
     | RedirectResponse<HEADERS>;
 
+  export type Context<
+    USER_INFO = any,
+    SYSTEM_INFO = any,
+    AUTH_SCOPE extends NSchemaService.AuthScope = NSchemaService.AuthScope
+  > = {
+    store: NContextService.RouteStore;
+  } & (AUTH_SCOPE extends "public:route"
+    ? {}
+    : AUTH_SCOPE extends "private:user"
+    ? {
+        user: USER_INFO;
+      }
+    : AUTH_SCOPE extends "private:system"
+    ? {
+        user: USER_INFO;
+        system: SYSTEM_INFO;
+      }
+    : never);
+
   export type Handler = (
     request: Request<any, any, any, any>,
     agents: NSchemaService.Agents,
     context: Context
   ) => Promise<Response | void>;
-
-  export type SchemaParts = {
-    service: string;
-    domain: string;
-    version: string;
-    action: string;
-  };
 }

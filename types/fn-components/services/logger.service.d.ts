@@ -75,9 +75,7 @@ export namespace NLoggerService {
 
   export interface CoreBaseOptions {
     namespace: string;
-    errorId?: string;
     tag?: ServiceTag;
-    traceId?: string;
     requestId?: string;
     sessionId?: string;
   }
@@ -114,8 +112,10 @@ export namespace NLoggerService {
     scope: "Core" | "Schema";
     databaseType: DatabaseType;
     service: string;
-    domain: string;
-    action: string;
+    domain?: string;
+    action?: string;
+    event?: string;
+    type?: string;
   }
   export interface MongodbDatabaseOptions
     extends BaseDatabaseOptions,
@@ -143,13 +143,19 @@ export namespace NLoggerService {
   }
 
   export interface BaseSchemaOptions {
-    application: string;
-    collection: string;
+    service: string;
+    domain: string;
     version: string;
-    action: string;
-    method: string;
+    action?: string;
+    method?: string;
+    event?: string;
+    type?: string;
     scope?: string;
     tag?: string;
+    sessionId?: string;
+    requestId?: string;
+    userId?: string;
+    ip?: string;
   }
 
   export interface SchemaErrorOptions extends ScopeOptions, BaseSchemaOptions {}

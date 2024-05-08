@@ -1,5 +1,6 @@
 import { injectable, inject, mongoose } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { Guards } from "~utils";
 import { AbstractConnector } from "./abstract.connector";
 
 import {
@@ -109,7 +110,11 @@ export class MongoConnector
           requestId: store.requestId,
           service: store.service,
           domain: store.domain,
-          action: store.action,
+          action: Guards.isRoute(store) ? store.action : undefined,
+          sessionId: store.sessionId,
+          tag: "Execution",
+          event: Guards.isRoute(store) ? undefined : store.event,
+          type: Guards.isRoute(store) ? undefined : store.type,
           scope: "Schema",
           operation: operation,
           payload: JSON.stringify(payload),

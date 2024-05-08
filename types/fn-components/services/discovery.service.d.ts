@@ -245,10 +245,10 @@ export namespace NDiscoveryService {
       };
     };
     adapters: {
+      serverTag: string;
       http: {
         enable: boolean;
         kind: string;
-        serverTag: string;
         protocol: string;
         host: string;
         port: number;
