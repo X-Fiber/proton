@@ -1,15 +1,22 @@
-import { injectable, inject, rabbitMQ } from "~packages";
+import { injectable, inject, rabbitMQ, uuid } from "~packages";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { AbstractConnector } from "./abstract.connector";
 
-import {
+import type {
   RabbitMQ,
   ILoggerService,
   IDiscoveryService,
   IRabbitMQConnector,
   NRabbitMQConnector,
   IExceptionProvider,
+  IFunctionalityAgent,
+  ISchemaAgent,
+  IIntegrationAgent,
+  NContextService,
+  IContextService,
+  ISchemaService,
+  NSchemaService,
 } from "~types";
 
 injectable();
@@ -24,7 +31,11 @@ export class RabbitMQConnector
     @inject(CoreSymbols.DiscoveryService)
     protected readonly discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
-    protected readonly loggerService: ILoggerService
+    protected readonly loggerService: ILoggerService,
+    @inject(CoreSymbols.ContextService)
+    protected _contextService: IContextService,
+    @inject(CoreSymbols.SchemaService)
+    protected _schemaService: ISchemaService
   ) {
     super();
 
@@ -118,7 +129,7 @@ export class RabbitMQConnector
         heartbeat: this._options.heartBeat,
         vhost: this._options.vhost,
       },
-      (err, connection): void => {
+      async (err, connection): Promise<void> => {
         if (this._connection) return;
         const { protocol, host, port } = this._options;
 
@@ -138,26 +149,139 @@ export class RabbitMQConnector
         this._connection = connection;
 
         this.loggerService.system(
-          `Mongodb connector has been started on ${protocol}://${host}:${port}.`,
+          `RabbitMQ connector has been started on ${protocol}://${host}:${port}.`,
           {
             tag: "Connection",
             namespace: RabbitMQConnector.name,
             scope: "Core",
           }
         );
+
+        await this._subscribe();
       }
     );
   }
 
   public async stop(): Promise<void> {
     if (this._connection) {
+      this.connection.close(() => {
+        this.loggerService.system(`Mongodb connector has been stopped.`, {
+          tag: "Destroy",
+          namespace: RabbitMQConnector.name,
+          scope: "Core",
+        });
+      });
       this._connection = undefined;
     }
+  }
 
-    this.loggerService.system(`Mongodb connector has been stopped.`, {
-      tag: "Destroy",
-      namespace: RabbitMQConnector.name,
-      scope: "Core",
+  protected async _subscribe(): Promise<void> {
+    this.connection.createChannel((e, channel) => {
+      this._schemaService.schema.forEach((sStorage, sName) => {
+        sStorage.forEach((sDomain, dName) => {
+          sDomain.broker.forEach((topic, queue) => {
+            switch (topic.type) {
+              case "queue":
+                this._consumeQueue(channel, sName, dName, queue, topic);
+                break;
+              case "exchange":
+                this._consumeExchange(channel, queue, topic);
+                break;
+            }
+          });
+        });
+      });
     });
+  }
+
+  private async _consumeQueue(
+    channel: RabbitMQ.Channel,
+    service: string,
+    domain: string,
+    queue: string,
+    topic: NRabbitMQConnector.QueueTopic
+  ): Promise<void> {
+    const qOptions: RabbitMQ.QueueOptions = {
+      durable: topic.queue?.durable ?? true,
+      ...topic.queue,
+    };
+    const cOptions: RabbitMQ.ConsumeOptions = {
+      noAck: topic.consume?.noAck ?? true,
+      ...topic.consume,
+    };
+
+    const name = `${service}.${domain}.${topic.version}.${queue}`;
+
+    channel.assertQueue(name, qOptions);
+    channel.consume(
+      queue,
+      async (msg): Promise<void> => {
+        if (msg) {
+          await this._callHandler(msg, service, domain, queue, topic);
+        }
+      },
+      cOptions
+    );
+  }
+
+  private async _consumeExchange(
+    channel: RabbitMQ.Channel,
+    queue: string,
+    topic: NRabbitMQConnector.ExchangeTopic
+  ): Promise<void> {
+    // TODO: Method not implemented
+    console.log(channel, queue, topic);
+  }
+
+  private async _callHandler(
+    msg: RabbitMQ.Message,
+    service: string,
+    domain: string,
+    queue: string,
+    topic: NRabbitMQConnector.Topic
+  ): Promise<void> {
+    const agents: NSchemaService.Agents = {
+      fnAgent: container.get<IFunctionalityAgent>(
+        CoreSymbols.FunctionalityAgent
+      ),
+      schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+      inAgent: container.get<IIntegrationAgent>(CoreSymbols.IntegrationAgent),
+    };
+
+    const store: NContextService.TopicStore = {
+      service: service,
+      domain: domain,
+      queue: queue,
+      version: topic.version,
+      schema: this._schemaService.schema,
+      requestId: uuid.v4(),
+      language: "",
+    };
+
+    switch (topic.scope) {
+      case "public":
+        break;
+      case "private":
+        break;
+    }
+
+    const context: NRabbitMQConnector.Context = {
+      store: store,
+      session: {},
+    };
+
+    try {
+      await topic.handler(msg, agents, context);
+    } catch (e) {
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError(e, {
+          tag: "Execution",
+          errorType: "FAIL",
+          namespace: RabbitMQConnector.name,
+          requestId: this._contextService.store.requestId,
+          sessionId: this._contextService.store.sessionId,
+        });
+    }
   }
 }

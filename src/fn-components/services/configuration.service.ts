@@ -8,6 +8,7 @@ import type {
   IDiscoveryService,
   IExceptionProvider,
   ILoggerService,
+  IRabbitMQTunnel,
 } from "~types";
 import { container } from "~container";
 

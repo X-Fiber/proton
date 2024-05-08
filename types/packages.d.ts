@@ -21,6 +21,7 @@ import libAmqp from "amqplib/callback_api";
 import { StringObject, UnknownObject } from "../utils";
 
 import SeedsDiscovery from "@chaminjector/seeds-discovery-service";
+import { Options } from "amqplib/properties";
 
 export namespace Inversify {
   export namespace interfaces {
@@ -369,4 +370,9 @@ export namespace Seeds {
 
 export namespace RabbitMQ {
   export type Connection = libAmqp.Connection;
+  export type Channel = libAmqp.Channel;
+  export type QueueOptions = libAmqp.Options.AssertQueue;
+  export type ExchangeOptions = libAmqp.Options.AssertExchange;
+  export type ConsumeOptions = libAmqp.Options.Consume;
+  export type Message = libAmqp.Message;
 }

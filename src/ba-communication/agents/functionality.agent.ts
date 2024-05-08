@@ -80,8 +80,8 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       version: store.version,
       service: store.service,
       domain: store.domain,
-      event: Guards.isRoute(store) ? undefined : store.event,
-      type: Guards.isRoute(store) ? undefined : store.type,
+      event: Guards.isEvent(store) ? store.event : undefined,
+      type: Guards.isEvent(store) ? store.type : undefined,
     };
 
     return {

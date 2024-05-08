@@ -28,6 +28,7 @@ export const CoreSymbols = {
   MongoTunnel: Symbol("MongoTunnel"),
   TypeormTunnel: Symbol("TypeormTunnel"),
   RedisTunnel: Symbol("RedisTunnel"),
+  RabbitMQTunnel: Symbol("RabbitMQTunnel"),
 
   // Integrations
   MailIntegration: Symbol("MailIntegration"),

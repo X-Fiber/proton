@@ -35,6 +35,7 @@ import {
   HttpFactory,
   WsFactory,
   WsAdapter,
+  RabbitMQTunnel,
 } from "~fn-components";
 
 import type {
@@ -67,6 +68,7 @@ import type {
   IAbstractService,
   IPermissionProvider,
   IRabbitMQConnector,
+  IRabbitMQTunnel,
 } from "~types";
 
 export const CoreModule = new inversify.ContainerModule(
@@ -138,6 +140,9 @@ export const CoreModule = new inversify.ContainerModule(
       .inTransientScope();
     bind<IRedisTunnel>(CoreSymbols.RedisTunnel)
       .to(RedisTunnel)
+      .inTransientScope();
+    bind<IRabbitMQTunnel>(CoreSymbols.RabbitMQTunnel)
+      .to(RabbitMQTunnel)
       .inTransientScope();
 
     // Integrations

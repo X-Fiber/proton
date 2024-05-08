@@ -396,6 +396,7 @@ export class SchemaLoader implements ISchemaLoader {
     this._domains.set(domain, {
       routes: new Map<string, NSchemaService.Route>(),
       events: new Map<string, NSchemaService.Event>(),
+      broker: new Map<string, NSchemaService.Topic>(),
       helper: new Map<string, AnyFn>(),
       dictionaries: new Map<string, ExtendedRecordObject>(),
       validator: new Map<string, NSchemaService.ValidatorHandler>(),
