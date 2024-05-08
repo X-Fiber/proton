@@ -16,7 +16,7 @@ import { Redis, RedisOptions } from "ioredis";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import ws from "ws";
-import { OpenAPIV3 } from "openapi-types";
+import libAmqp from "amqplib/callback_api";
 
 import { StringObject, UnknownObject } from "../utils";
 
@@ -365,4 +365,8 @@ export namespace Openapi {
 export namespace Seeds {
   export type IAbstractDiscoveryService =
     SeedsDiscovery.IAbstractDiscoveryService;
+}
+
+export namespace RabbitMQ {
+  export type Connection = libAmqp.Connection;
 }

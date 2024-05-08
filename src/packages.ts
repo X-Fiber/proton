@@ -20,6 +20,7 @@ import libFastify from "fastify";
 import libIoredis from "ioredis";
 import libWs from "ws";
 import { v4 } from "uuid";
+import libAmqp from "amqplib/callback_api";
 
 export { injectable, inject } from "inversify";
 
@@ -74,6 +75,10 @@ export const dateFns = {
 
 export const mongoose = {
   connect: libMongoose.connect,
+};
+
+export const rabbitMQ = {
+  connect: libAmqp.connect,
 };
 
 export const nodemailer = {

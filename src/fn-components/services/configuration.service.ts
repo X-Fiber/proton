@@ -12,8 +12,8 @@ import type {
 import { container } from "~container";
 
 @injectable()
-export class ConfigurationService extends AbstractService {
-  protected readonly _SERVICE_NAME = ConfigurationService.name;
+export class CombinationService extends AbstractService {
+  protected readonly _SERVICE_NAME = CombinationService.name;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
@@ -37,7 +37,7 @@ export class ConfigurationService extends AbstractService {
       return true;
     } catch (e) {
       this._loggerService.error(e, {
-        namespace: ConfigurationService.name,
+        namespace: CombinationService.name,
         tag: "Init",
         errorType: "FATAL",
         scope: "Core",
@@ -45,7 +45,7 @@ export class ConfigurationService extends AbstractService {
       throw container
         .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
         .throwError(e, {
-          namespace: ConfigurationService.name,
+          namespace: CombinationService.name,
           tag: "Connection",
           requestId: this._contextService.store.requestId,
           sessionId: this._contextService.store.sessionId,
@@ -60,7 +60,7 @@ export class ConfigurationService extends AbstractService {
       await this._wsFactory.stand();
     } catch (e) {
       this._loggerService.error(e, {
-        namespace: ConfigurationService.name,
+        namespace: CombinationService.name,
         tag: "Init",
         errorType: "FATAL",
         scope: "Core",
@@ -68,7 +68,7 @@ export class ConfigurationService extends AbstractService {
       throw container
         .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
         .throwError(e, {
-          namespace: ConfigurationService.name,
+          namespace: CombinationService.name,
           tag: "Destroy",
           requestId: this._contextService.store.requestId,
           sessionId: this._contextService.store.sessionId,

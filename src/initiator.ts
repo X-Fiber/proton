@@ -8,6 +8,7 @@ import type {
   IRedisConnector,
   IComputeConnector,
   ITypeormConnector,
+  IRabbitMQConnector,
 } from "~types";
 
 @injectable()
@@ -15,14 +16,16 @@ export class Initiator implements IInitiator {
   constructor(
     @inject(CoreSymbols.ServiceConnector)
     private readonly _serviceConnector: IComputeConnector,
+    @inject(CoreSymbols.IntegrationConnector)
+    private readonly _integrationConnector: IIntegrationConnector,
     @inject(CoreSymbols.MongoConnector)
     private readonly _mongodbConnector: IMongoConnector,
     @inject(CoreSymbols.TypeormConnector)
     private readonly _typeormConnector: ITypeormConnector,
     @inject(CoreSymbols.RedisConnector)
     private readonly _redisConnector: IRedisConnector,
-    @inject(CoreSymbols.IntegrationConnector)
-    private readonly _integrationConnector: IIntegrationConnector
+    @inject(CoreSymbols.RabbitMQConnector)
+    private readonly _rabbitMQConnector: IRabbitMQConnector
   ) {}
 
   public async start(): Promise<void> {
@@ -31,8 +34,10 @@ export class Initiator implements IInitiator {
     await this._mongodbConnector.start();
     await this._typeormConnector.start();
     await this._redisConnector.start();
+    await this._rabbitMQConnector.start();
   }
   public async stop(): Promise<void> {
+    await this._rabbitMQConnector.stop();
     await this._redisConnector.stop();
     await this._typeormConnector.stop();
     await this._mongodbConnector.stop();

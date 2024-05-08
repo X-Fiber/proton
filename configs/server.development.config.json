@@ -13,6 +13,9 @@
     },
     "typeorm": {
       "enable": true
+    },
+    "rabbitMQ": {
+      "enable": true
     }
   }
 }

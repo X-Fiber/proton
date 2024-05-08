@@ -57,6 +57,7 @@
   "homepage": "https://github.com/pestsov-v/cap-server-core#readme",
   "dependencies": {
     "@chaminjector/seeds-discovery-service": "^0.0.11",
+    "amqplib": "^0.10.4",
     "bcrypt": "^5.1.1",
     "colors": "^1.4.0",
     "date-fns": "^3.3.1",
@@ -76,6 +77,7 @@
     "ws": "^8.14.2"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.5",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.21",
     "@types/fs-extra": "^11.0.3",
