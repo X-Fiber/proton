@@ -25,8 +25,11 @@ export class RabbitMQTunnel implements IRabbitMQTunnel {
         throw this._callbackError(e);
       }
 
-      channel.assertQueue(queue, { durable: true });
-      channel.sendToQueue(queue, Buffer.from(JSON.stringify(data)));
+      // TODO: implement correct name
+      const name = `Test.test.v1.${queue}`;
+
+      channel.assertQueue(name, { durable: true });
+      channel.sendToQueue(name, Buffer.from(JSON.stringify(data)));
     });
   }
 

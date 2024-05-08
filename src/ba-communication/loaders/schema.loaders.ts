@@ -7,6 +7,7 @@ import {
   ISchemaLoader,
   NSchemaLoader,
   NSchemaService,
+  NRabbitMQConnector,
 } from "~types";
 
 @injectable()
@@ -52,6 +53,9 @@ export class SchemaLoader implements ISchemaLoader {
         }
         if (documents.emitter) {
           this._setEmitter(name, documents.emitter);
+        }
+        if (documents.broker) {
+          this._setBroker(service.service, name, documents.broker);
         }
         if (documents.helper) {
           this._setHelper(name, documents.helper);
@@ -202,6 +206,25 @@ export class SchemaLoader implements ISchemaLoader {
           });
         }
       }
+    }
+  }
+
+  private _setBroker(
+    service: string,
+    domain: string,
+    structure: NSchemaLoader.BrokerStructure
+  ): void {
+    const storage = this._domains.get(domain);
+    if (!storage) {
+      this._setDomain(domain);
+      this._setBroker(service, domain, structure);
+      return;
+    }
+
+    for (const name in structure) {
+      const topic = structure[name];
+      const key = `${service}.${domain}.${topic.version}.${name}`;
+      storage.broker.set(key, topic);
     }
   }
 
@@ -396,7 +419,7 @@ export class SchemaLoader implements ISchemaLoader {
     this._domains.set(domain, {
       routes: new Map<string, NSchemaService.Route>(),
       events: new Map<string, NSchemaService.Event>(),
-      broker: new Map<string, NSchemaService.Topic>(),
+      broker: new Map<string, NRabbitMQConnector.Topic>(),
       helper: new Map<string, AnyFn>(),
       dictionaries: new Map<string, ExtendedRecordObject>(),
       validator: new Map<string, NSchemaService.ValidatorHandler>(),

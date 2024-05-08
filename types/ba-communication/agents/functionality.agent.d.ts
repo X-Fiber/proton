@@ -1,17 +1,16 @@
-import {
+import type {
+  IAbstractWsAdapter,
   IDiscoveryService,
   IExceptionProvider,
-  ILocalizationProvider,
   ILoggerService,
-  IMongoTunnel,
   IPermissionProvider,
+  IRabbitMQTunnel,
   IRouteException,
   IScramblerService,
   ISessionProvider,
   ITypeormTunnel,
   NExceptionProvider,
 } from "../../fn-components";
-import { AbstractWsAdapter } from "../../../src/fn-components/adapters/ws-adapters/abstract.ws-adapter";
 
 export interface IFunctionalityAgent {
   readonly discovery: NFunctionalityAgent.Discovery;
@@ -22,6 +21,7 @@ export interface IFunctionalityAgent {
   readonly exception: NFunctionalityAgent.Exception;
   readonly permissions: NFunctionalityAgent.Permissions;
   readonly ws: NFunctionalityAgent.Ws;
+  readonly broker: NFunctionalityAgent.Broker;
 }
 
 export namespace NFunctionalityAgent {
@@ -64,8 +64,12 @@ export namespace NFunctionalityAgent {
   };
 
   export type Ws = {
-    send: AbstractWsAdapter<"ws">["send"];
-    broadcast: AbstractWsAdapter<"ws">["broadcast"];
+    send: IAbstractWsAdapter["send"];
+    broadcast: IAbstractWsAdapter["broadcast"];
+  };
+
+  export type Broker = {
+    sendToQueue: IRabbitMQTunnel["sendToQueue"];
   };
 
   export type Sessions = {

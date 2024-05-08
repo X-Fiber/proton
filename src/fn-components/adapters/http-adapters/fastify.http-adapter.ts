@@ -373,7 +373,7 @@ export class FastifyHttpAdapter
       path: req.url,
       ip: req.ip,
       requestId: uuid.v4(),
-      schema: this._contextService.store.schema,
+      schema: this._schemaService.schema,
       language: acceptLanguage,
     };
 

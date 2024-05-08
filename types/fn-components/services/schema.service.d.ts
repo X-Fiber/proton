@@ -16,6 +16,7 @@ import {
 } from "../utils";
 import { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
 import { NContextService } from "./context.service";
+import { NRabbitMQConnector } from "../../connectors";
 
 export interface ISchemaService extends IAbstractService {
   readonly schema: NSchemaService.BusinessScheme;
@@ -106,33 +107,6 @@ export namespace NSchemaService {
     handler: NAbstractWsAdapter.Handler;
   };
 
-  export type TopicKind = "queue" | "exchange";
-
-  export type TopicHandler = (
-    msg: RabbitMQ.Message,
-    agents: Agents,
-    context: any
-  ) => Promise<void>;
-  interface BaseTopic {
-    type: TopicKind;
-    scope: "public" | "private";
-    version: string;
-    handler: TopicHandler;
-  }
-
-  interface QueueTopic extends BaseTopic {
-    type: "queue";
-    queue?: RabbitMQ.QueueOptions;
-    consume?: RabbitMQ.ConsumeOptions;
-  }
-
-  interface ExchangeTopic extends BaseTopic {
-    type: "exchange";
-    exchange?: RabbitMQ.ExchangeOptions;
-  }
-
-  export type Topic = QueueTopic | ExchangeTopic;
-
   export type TypeormEntities = Map<string, Typeorm.EntitySchema<unknown>>;
 
   export type ValidateErrors = Array<{
@@ -175,7 +149,7 @@ export namespace NSchemaService {
     routes: Map<string, Route>;
     events: Map<string, Event>;
     helper: Map<string, AnyFn>;
-    broker: Map<string, Topic>;
+    broker: Map<string, NRabbitMQConnector.Topic>;
     dictionaries: Map<string, ExtendedRecordObject>;
     validator: Map<string, ValidatorHandler>;
     typeorm?: {

@@ -23,8 +23,8 @@ import {
   IPermissionProvider,
   IAbstractWsAdapter,
   ILoggerService,
-  NContextService,
   NLoggerService,
+  IRabbitMQTunnel,
 } from "~types";
 
 @injectable()
@@ -185,17 +185,6 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     };
   }
 
-  public get ws(): NFunctionalityAgent.Ws {
-    return {
-      send: (sessionId, type, payload): void => {
-        this._wsAdapter.send(sessionId, type, payload);
-      },
-      broadcast: (sessionIds, type, payload): void => {
-        this._wsAdapter.broadcast(sessionIds, type, payload);
-      },
-    };
-  }
-
   public get exception(): NFunctionalityAgent.Exception {
     return {
       validation: (errors: NSchemaService.ValidateErrors): IValidatorError => {
@@ -337,6 +326,27 @@ export class FunctionalityAgent implements IFunctionalityAgent {
         events: EV
       ): Promise<void> => {
         return provider.removeEvent(role, events);
+      },
+    };
+  }
+
+  public get ws(): NFunctionalityAgent.Ws {
+    return {
+      send: (sessionId, type, payload): void => {
+        this._wsAdapter.send(sessionId, type, payload);
+      },
+      broadcast: (sessionIds, type, payload): void => {
+        this._wsAdapter.broadcast(sessionIds, type, payload);
+      },
+    };
+  }
+
+  public get broker(): NFunctionalityAgent.Broker {
+    const tunnel = container.get<IRabbitMQTunnel>(CoreSymbols.RabbitMQTunnel);
+
+    return {
+      sendToQueue: (queue, data) => {
+        tunnel.sendToQueue(queue, data);
       },
     };
   }
