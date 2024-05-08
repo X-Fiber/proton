@@ -3,23 +3,36 @@ import { IAbstractService } from "./abstract.service";
 import { NSchemaService } from "./schema.service";
 
 export interface IContextService extends IAbstractService {
-  readonly storage: AsyncHooks.AsyncLocalStorage<NContextService.Store>;
+  readonly storage: AsyncHooks.AsyncLocalStorage<
+    NContextService.RouteStore | NContextService.EventStore
+  >;
   readonly store: NContextService.Store;
   exit(callback?: () => void): void;
 }
 
 export namespace NContextService {
-  export type Store = {
+  interface BaseStore {
     requestId: string;
     sessionId?: string;
     userId?: string;
-    ip: string;
     path: string;
     service: string;
     domain: string;
+    schema: NSchemaService.BusinessScheme;
+    version: string;
+    language: string;
+  }
+
+  export interface RouteStore extends BaseStore {
+    ip: string;
     action: string;
     method: string;
-    schema: NSchemaService.BusinessScheme;
-    language: string;
-  };
+  }
+
+  export interface EventStore extends BaseStore {
+    event: string;
+    type: string;
+  }
+
+  export type Store = RouteStore | EventStore;
 }

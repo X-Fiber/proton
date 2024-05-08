@@ -19,14 +19,13 @@ import {
   NContextService,
   ISchemaAgent,
   IScramblerService,
-  ISessionService,
   NScramblerService,
   ILocalizationProvider,
   IIntegrationAgent,
   NSchemaService,
   ISchemaService,
+  ISessionProvider,
 } from "~types";
-import * as querystring from "node:querystring";
 
 @injectable()
 export class FastifyHttpAdapter
@@ -48,10 +47,6 @@ export class FastifyHttpAdapter
     protected readonly _contextService: IContextService,
     @inject(CoreSymbols.ScramblerService)
     private readonly _scramblerService: IScramblerService,
-    @inject(CoreSymbols.SessionService)
-    private readonly _sessionService: ISessionService,
-    @inject(CoreSymbols.LocalizationProvider)
-    private readonly _localizationService: ILocalizationProvider,
     @inject(CoreSymbols.SchemaService)
     private readonly _schemaService: ISchemaService
   ) {
@@ -81,7 +76,7 @@ export class FastifyHttpAdapter
         this._config.kind
       ),
       serverTag: this._discoveryService.getString(
-        "adapters.http.serverTag",
+        "adapters.serverTag",
         this._config.serverTag
       ),
       protocol: this._discoveryService.getString(
@@ -362,8 +357,6 @@ export class FastifyHttpAdapter
       );
     }
 
-    console.log(params);
-
     // TODO: resolve query params
     let queries: ModeObject = {};
     if (req.query) {
@@ -372,10 +365,11 @@ export class FastifyHttpAdapter
 
     const acceptLanguage = req.headers["accept-language"];
 
-    const store: NContextService.Store = {
+    const store: NContextService.RouteStore = {
       service: req.params.service,
       domain: req.params.domain,
       action: req.params.action,
+      version: req.params.version,
       method: req.method,
       path: req.url,
       ip: req.ip,
@@ -395,6 +389,10 @@ export class FastifyHttpAdapter
           user: {},
           system: {},
         };
+
+        const sessionProvider = container.get<ISessionProvider>(
+          CoreSymbols.SessionProvider
+        );
 
         switch (action.scope) {
           case "public:route":
@@ -416,8 +414,7 @@ export class FastifyHttpAdapter
             context.user = {
               userId: jwtPayload.payload.userId,
               sessionId: jwtPayload.payload.sessionId,
-              ...(await this._sessionService.getHttpSessionInfo(
-                jwtPayload.payload.userId,
+              ...(await sessionProvider.getById<any>(
                 jwtPayload.payload.sessionId
               )),
             };
@@ -439,8 +436,7 @@ export class FastifyHttpAdapter
             context.user = {
               userId: jwtPayload2.payload.userId,
               sessionId: jwtPayload2.payload.sessionId,
-              ...(await this._sessionService.getHttpSessionInfo(
-                jwtPayload2.payload.userId,
+              ...(await sessionProvider.getById<any>(
                 jwtPayload2.payload.sessionId
               )),
             };

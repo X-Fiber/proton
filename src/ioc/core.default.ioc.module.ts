@@ -24,7 +24,7 @@ import {
   PermissionProvider,
   SchemaService,
   ScramblerService,
-  SessionService,
+  SessionProvider,
   MailIntegration,
   ExceptionProvider,
   MongoTunnel,
@@ -56,7 +56,7 @@ import type {
   IRedisConnector,
   IRedisTunnel,
   IScramblerService,
-  ISessionService,
+  ISessionProvider,
   ILocalizationProvider,
   IMailIntegration,
   IIntegrationConnector,
@@ -105,9 +105,7 @@ export const CoreModule = new inversify.ContainerModule(
     bind<IScramblerService>(CoreSymbols.ScramblerService)
       .to(ScramblerService)
       .inSingletonScope();
-    bind<ISessionService>(CoreSymbols.SessionService)
-      .to(SessionService)
-      .inSingletonScope();
+
     bind<IAbstractService>(CoreSymbols.GetawayService)
       .to(ConfigurationService)
       .inSingletonScope();
@@ -116,12 +114,15 @@ export const CoreModule = new inversify.ContainerModule(
     bind<IExceptionProvider>(CoreSymbols.ExceptionProvider)
       .to(ExceptionProvider)
       .inTransientScope();
+    bind<ISessionProvider>(CoreSymbols.SessionProvider)
+      .to(SessionProvider)
+      .inTransientScope();
     bind<ILocalizationProvider>(CoreSymbols.LocalizationProvider)
       .to(LocalizationProvider)
-      .inSingletonScope();
+      .inTransientScope();
     bind<IPermissionProvider>(CoreSymbols.PermissionProvider)
       .to(PermissionProvider)
-      .inSingletonScope();
+      .inTransientScope();
 
     // Tunnels
     bind<IMongoTunnel>(CoreSymbols.MongoTunnel)

@@ -1,7 +1,7 @@
 import { NExceptionProvider } from "~types";
 
 export const CoreErrors = {
-  SessionService: {
+  SessionProvider: {
     INVALID_DATA_PAYLOAD: {
       code: "1100.1001",
       data: {

@@ -16,7 +16,7 @@ export const CoreSymbols = {
   GetawayService: Symbol("GetawayService"),
   ContextService: Symbol("ContextService"),
   ScramblerService: Symbol("ScramblerService"),
-  SessionService: Symbol("SessionService"),
+  SessionProvider: Symbol("SessionProvider"),
 
   // Providers
   ExceptionProvider: Symbol("ExceptionProvider"),

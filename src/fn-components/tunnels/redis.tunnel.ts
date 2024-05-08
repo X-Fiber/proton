@@ -35,7 +35,7 @@ export class RedisTunnel implements IRedisTunnel {
         info: T,
         ttl: number
       ): Promise<void> => {
-        return this._hsetWithExpire(id, info, ttl);
+        return this._hsetWithExpire<T>(id, info, ttl);
       },
       hset: <T extends UnknownObject>(id: string, data: T): Promise<void> => {
         return this._hashSet(id, data);

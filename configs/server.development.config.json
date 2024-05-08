@@ -2,6 +2,9 @@
   "adapters": {
     "http": {
       "enable": true
+    },
+    "ws": {
+      "enable": true
     }
   },
   "connectors": {

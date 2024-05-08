@@ -9,7 +9,7 @@ import type {
   ISchemaService,
   IScramblerService,
   IComputeConnector,
-  ISessionService,
+  ISessionProvider,
   IAbstractService,
   IPermissionProvider,
 } from "~types";
@@ -31,9 +31,7 @@ export class ComputeConnector
     @inject(CoreSymbols.GetawayService)
     private readonly _getawayService: IAbstractService,
     @inject(CoreSymbols.ContextService)
-    private readonly _contextService: IContextService,
-    @inject(CoreSymbols.SessionService)
-    private readonly _sessionService: ISessionService
+    private readonly _contextService: IContextService
   ) {
     super();
   }
@@ -45,10 +43,8 @@ export class ComputeConnector
     await this._getawayService.start();
     await this._scramblerService.start();
     await this._schemaService.start();
-    await this._sessionService.start();
   }
   public async stop(): Promise<void> {
-    await this._sessionService.stop();
     await this._getawayService.stop();
     await this._schemaService.stop();
     await this._scramblerService.stop();

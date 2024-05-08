@@ -2,22 +2,26 @@ import {
   IDiscoveryService,
   IExceptionProvider,
   ILocalizationProvider,
+  ILoggerService,
   IMongoTunnel,
   IPermissionProvider,
   IRouteException,
   IScramblerService,
-  ISessionService,
+  ISessionProvider,
   ITypeormTunnel,
   NExceptionProvider,
 } from "../../fn-components";
+import { AbstractWsAdapter } from "../../../src/fn-components/adapters/ws-adapters/abstract.ws-adapter";
 
 export interface IFunctionalityAgent {
   readonly discovery: NFunctionalityAgent.Discovery;
+  readonly logger: NFunctionalityAgent.Logger;
   readonly utils: NFunctionalityAgent.Utils;
   readonly scrambler: NFunctionalityAgent.Scrambler;
   readonly sessions: NFunctionalityAgent.Sessions;
   readonly exception: NFunctionalityAgent.Exception;
   readonly permissions: NFunctionalityAgent.Permissions;
+  readonly ws: NFunctionalityAgent.Ws;
 }
 
 export namespace NFunctionalityAgent {
@@ -28,6 +32,15 @@ export namespace NFunctionalityAgent {
     getBoolean: IDiscoveryService["getSchemaBoolean"];
     getArray: IDiscoveryService["getSchemaArray"];
     getBuffer: IDiscoveryService["getSchemaBuffer"];
+  };
+
+  export type Logger = {
+    error: ILoggerService["logSchemaError"];
+    exception: ILoggerService["logSchemaException"];
+    warn: ILoggerService["logSchemaWarn"];
+    api: ILoggerService["logSchemaApi"];
+    info: ILoggerService["logSchemaInfo"];
+    debug: ILoggerService["logSchemaDebug"];
   };
 
   export type Utils = {
@@ -50,20 +63,17 @@ export namespace NFunctionalityAgent {
     comparePassword: IScramblerService["compareHash"];
   };
 
-  export type HttpSessions = {
-    openHttpSession: ISessionService["openHttpSession"];
-    getHttpSessionInfo: ISessionService["getHttpSessionInfo"];
-    getHttpSessionCount: ISessionService["getHttpSessionCount"];
-    deleteHttpSession: ISessionService["deleteHttpSession"];
-  };
-
-  export type WsSessions = {
-    sendSessionToSession: ISessionService["sendSessionToSession"];
+  export type Ws = {
+    send: AbstractWsAdapter<"ws">["send"];
+    broadcast: AbstractWsAdapter<"ws">["broadcast"];
   };
 
   export type Sessions = {
-    http: HttpSessions;
-    ws: WsSessions;
+    open: ISessionProvider["open"];
+    getById: ISessionProvider["getById"];
+    getCount: ISessionProvider["getCount"];
+    update: ISessionProvider["update"];
+    removeById: ISessionProvider["removeById"];
   };
 
   export type Exception = {

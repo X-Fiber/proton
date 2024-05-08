@@ -1,7 +1,7 @@
 import { injectable } from "~packages";
 import { SchemaHeaders } from "~common";
 
-import type {
+import {
   UnknownObject,
   IContextService,
   IDiscoveryService,

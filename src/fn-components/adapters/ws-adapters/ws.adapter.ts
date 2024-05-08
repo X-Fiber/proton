@@ -1,16 +1,23 @@
-import { https, http, ws, injectable, inject } from "~packages";
+import { https, http, ws, injectable, inject, uuid } from "~packages";
+import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { AbstractWsAdapter } from "./abstract.ws-adapter";
 
-import type {
+import {
   Ws,
   Http,
   Https,
   IDiscoveryService,
   ILoggerService,
-  ISessionService,
   IAbstractWsAdapter,
-  NAbstractWebsocketAdapter,
+  NAbstractWsAdapter,
+  IContextService,
+  ISchemaService,
+  NContextService,
+  IFunctionalityAgent,
+  ISchemaAgent,
+  IIntegrationAgent,
+  NSchemaService,
 } from "~types";
 
 @injectable()
@@ -19,18 +26,24 @@ export class WsAdapter
   implements IAbstractWsAdapter
 {
   protected readonly _ADAPTER_NAME = WsAdapter.name;
-  protected _config: NAbstractWebsocketAdapter.Config;
+  protected _config: NAbstractWsAdapter.Config;
   protected _instance: Ws.WebSocketServer | undefined;
+
+  private _connections: Map<string, Ws.WebSocket>;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
     protected readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
     protected readonly _loggerService: ILoggerService,
-    @inject(CoreSymbols.SessionService)
-    protected readonly _sessionService: ISessionService
+    @inject(CoreSymbols.SchemaService)
+    private readonly _schemaService: ISchemaService,
+    @inject(CoreSymbols.ContextService)
+    private readonly _contextService: IContextService
   ) {
     super();
+
+    this._connections = new Map();
 
     this._config = {
       enable: false,
@@ -38,6 +51,7 @@ export class WsAdapter
       protocol: "ws",
       host: "0.0.0.0",
       port: 11001,
+      serverTag: "SERVER_01",
     };
   }
 
@@ -63,13 +77,15 @@ export class WsAdapter
         "adapters.ws.port",
         this._config.port
       ),
+      serverTag: this._discoveryService.getString(
+        "adapters.serverTag",
+        this._config.serverTag
+      ),
     };
   }
 
   public async start(): Promise<void> {
     this._setConfig();
-
-    if (!this._config) throw this._throwConfigError();
 
     const { protocol, host, port } = this._config;
     let server: Http.Server | Https.Server;
@@ -85,23 +101,22 @@ export class WsAdapter
     }
 
     try {
-      this._instance = new ws.WebSocketServer({ server });
+      this._instance = new ws.WebSocketServer({ noServer: true });
 
-      const instance = this._instance;
-      const service = this._sessionService;
+      this._instance.on("connection", (ws: Ws.WebSocket): void => {
+        this._handshake(ws);
+        ws.on("message", async (data) => await this._message(ws, data));
+        ws.on("close", () => this._close(ws));
+        ws.on("error", (data) => this._error(ws, data));
+      });
 
-      instance.on("connection", function (ws, request) {
-        const internalWs = ws as Ws.WebSocket;
-
-        service.setWsConnection(internalWs, {
-          userAgent: request.headers["user-agent"],
-          acceptLanguage: request.headers["accept-language"],
-          websocketKey: request.headers["sec-websocket-key"],
-          ip: request.socket.remoteAddress ?? "",
+      server.on("upgrade", (request, socket, head) => {
+        this._instance?.handleUpgrade(request, socket, head, (ws) => {
+          this._instance?.emit("connection", ws, request);
         });
       });
 
-      server.listen(port, () => {
+      server.listen({ port, host }, () => {
         this._loggerService.system(
           `Websocket server listening on ${protocol}://${host}:${port}`,
           {
@@ -114,6 +129,19 @@ export class WsAdapter
     } catch (e) {
       throw e;
     }
+  }
+
+  public send(connectionId: string, type: any, payload: any): void {
+    const connection = this._connections.get(connectionId);
+    if (!connection) {
+      throw new Error("ConnectionId not found");
+    }
+
+    connection.send(JSON.stringify({ type, payload }));
+  }
+
+  public broadcast(connectionId: string[], type: any, payload: any): void {
+    connectionId.forEach((conn) => this.send(conn, type, payload));
   }
 
   public async stop(): Promise<void> {
@@ -129,7 +157,135 @@ export class WsAdapter
     });
   }
 
-  private _throwConfigError() {
-    return new Error("Config not set");
+  private _handshake(ws: Ws.WebSocket): void {
+    const connectionId = uuid.v4();
+    ws.$__fiber__ = { connectionId, serverTag: this._config.serverTag };
+    this._connections.set(connectionId, ws);
+
+    ws.send(
+      JSON.stringify({
+        type: "handshake",
+        payload: { code: "0002.0001", message: "handshake successful" },
+      })
+    );
   }
+
+  private async _message(ws: Ws.WebSocket, raw: Ws.RawData): Promise<void> {
+    const data = raw.toString();
+
+    type Event = "handshake" | "handshake.error" | "session:to:session";
+    const kind: Event[] = ["session:to:session"];
+
+    let event: any = null;
+    try {
+      event = JSON.parse(data);
+    } catch (e) {
+      // TODO: resolve error
+      console.log(e);
+      throw e;
+    }
+
+    if ("event" in event && "payload" in event) {
+      const k = event.event as Event;
+      const p = event.payload as {
+        service: string;
+        domain: string;
+        event: string;
+        version: string;
+        data: any;
+        language: string;
+      };
+
+      if (kind.includes(k)) {
+        const service = this._schemaService.schema.get(p.service);
+        if (!service) {
+          ws.send(
+            JSON.stringify({
+              event: k + `.error`,
+              payload: {
+                code: "0001.0002",
+                message: "Resolve unknown service",
+              },
+            })
+          );
+          return;
+        }
+
+        const domain = service.get(p.domain);
+        if (!domain) {
+          throw new Error("Resolve unknown domain");
+        }
+
+        const name = `${p.version}.${p.event}.${k}`;
+
+        const event = domain.events.get(name);
+        if (!event) throw new Error("Resolve unknown event");
+
+        const store: NContextService.EventStore = {
+          service: p.service,
+          domain: p.domain,
+          event: p.event,
+          path: ws.url,
+          requestId: uuid.v4(),
+          version: p.version,
+          schema: this._contextService.store.schema,
+          type: k,
+          language: p.language,
+        };
+
+        try {
+          await this._contextService.storage.run(store, async () => {
+            const context: NAbstractWsAdapter.Context<
+              any,
+              any,
+              "private:system"
+            > = {
+              store: store,
+              user: {},
+              system: {},
+            };
+
+            switch (event.scope) {
+              case "public:route":
+                break;
+              case "private:user":
+                break;
+              case "private:system":
+                break;
+            }
+            try {
+              await event.handler(
+                p.data,
+                {
+                  fnAgent: container.get<IFunctionalityAgent>(
+                    CoreSymbols.FunctionalityAgent
+                  ),
+                  schemaAgent: container.get<ISchemaAgent>(
+                    CoreSymbols.SchemaAgent
+                  ),
+                  inAgent: container.get<IIntegrationAgent>(
+                    CoreSymbols.IntegrationAgent
+                  ),
+                },
+                context
+              );
+            } catch (e) {
+              console.log(e);
+            }
+          });
+        } catch (e) {
+        } finally {
+          this._contextService.exit();
+        }
+      }
+    } else {
+      // TODO: resolve invalid structure
+    }
+  }
+
+  private _close(ws: Ws.WebSocket) {
+    this._connections.delete(ws.$__fiber__.connectionId);
+    ws.close();
+  }
+  private _error(ws: Ws.WebSocket, error: Error) {}
 }

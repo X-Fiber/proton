@@ -1,6 +1,7 @@
 import { injectable, inject, uuid } from "~packages";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
+import { Guards, Helpers } from "~utils";
 
 import {
   Jwt,
@@ -10,7 +11,7 @@ import {
   IExceptionProvider,
   IFunctionalityAgent,
   IScramblerService,
-  ISessionService,
+  ISessionProvider,
   IValidatorError,
   NFunctionalityAgent,
   NScramblerService,
@@ -20,20 +21,25 @@ import {
   IContextService,
   NExceptionProvider,
   IPermissionProvider,
+  IAbstractWsAdapter,
+  ILoggerService,
+  NContextService,
+  NLoggerService,
 } from "~types";
-import { Helpers } from "~utils";
 
 @injectable()
 export class FunctionalityAgent implements IFunctionalityAgent {
   constructor(
     @inject(CoreSymbols.DiscoveryService)
     private readonly _discoveryService: IDiscoveryService,
+    @inject(CoreSymbols.LoggerService)
+    private readonly _loggerService: ILoggerService,
     @inject(CoreSymbols.ScramblerService)
     private readonly _scramblerService: IScramblerService,
-    @inject(CoreSymbols.SessionService)
-    private readonly _sessionService: ISessionService,
     @inject(CoreSymbols.ContextService)
-    private readonly _contextService: IContextService
+    private readonly _contextService: IContextService,
+    @inject(CoreSymbols.WsAdapter)
+    private readonly _wsAdapter: IAbstractWsAdapter
   ) {}
 
   public get discovery(): NFunctionalityAgent.Discovery {
@@ -55,6 +61,47 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       getBuffer: async (path: string): Promise<Buffer> => {
         return this._discoveryService.getSchemaBuffer(path);
+      },
+    };
+  }
+
+  public get logger(): NFunctionalityAgent.Logger {
+    const { store } = this._contextService;
+
+    const logOptions: NLoggerService.SchemaErrorOptions = {
+      scope: "Schema",
+      tag: "Execution",
+      sessionId: store.sessionId,
+      requestId: store.requestId,
+      ip: Guards.isRoute(store) ? store.ip : undefined,
+      userId: store.userId,
+      action: Guards.isRoute(store) ? store.action : undefined,
+      method: Guards.isRoute(store) ? store.method : undefined,
+      version: store.version,
+      service: store.service,
+      domain: store.domain,
+      event: Guards.isRoute(store) ? undefined : store.event,
+      type: Guards.isRoute(store) ? undefined : store.type,
+    };
+
+    return {
+      error: (msg) => {
+        this._loggerService.logSchemaError(msg, logOptions);
+      },
+      exception: (msg) => {
+        this._loggerService.logSchemaException(msg, logOptions);
+      },
+      warn: (msg) => {
+        this._loggerService.logSchemaWarn(msg, logOptions);
+      },
+      api: (msg) => {
+        this._loggerService.logSchemaApi(msg, logOptions);
+      },
+      info: (msg) => {
+        this._loggerService.logSchemaInfo(msg, logOptions);
+      },
+      debug: (msg) => {
+        this._loggerService.logSchemaDebug(msg, logOptions);
       },
     };
   }
@@ -109,37 +156,42 @@ export class FunctionalityAgent implements IFunctionalityAgent {
   }
 
   public get sessions(): NFunctionalityAgent.Sessions {
+    const provider = container.get<ISessionProvider>(
+      CoreSymbols.SessionProvider
+    );
+
     return {
-      http: {
-        openHttpSession: async <T extends UnknownObject>(
-          payload: T
-        ): Promise<string> => {
-          return this._sessionService.openHttpSession<T>(payload);
-        },
-        getHttpSessionInfo: async <T extends UnknownObject>(
-          userId: string,
-          sessionId: string
-        ): Promise<Nullable<T>> => {
-          return this._sessionService.getHttpSessionInfo<T>(userId, sessionId);
-        },
-        getHttpSessionCount: async (userId): Promise<number> => {
-          return this._sessionService.getHttpSessionCount(userId);
-        },
-        deleteHttpSession: async (
-          userId: string,
-          sessionId: string
-        ): Promise<void> => {
-          return this._sessionService.deleteHttpSession(userId, sessionId);
-        },
+      open: <T extends UnknownObject>(payload: T): Promise<string> => {
+        return provider.open<T>(payload);
       },
-      ws: {
-        sendSessionToSession: async (event, payload): Promise<void> => {
-          try {
-            return this._sessionService.sendSessionToSession(event, payload);
-          } catch (e) {
-            throw e;
-          }
-        },
+      getById: <T extends UnknownObject>(
+        sessionId: string
+      ): Promise<T | null> => {
+        return provider.getById<T>(sessionId);
+      },
+      getCount: (sessionId: string): Promise<number> => {
+        return provider.getCount(sessionId);
+      },
+      update: <T extends Record<string, unknown>>(
+        sessionId: string,
+        field: keyof T,
+        value: T[keyof T]
+      ): Promise<void> => {
+        return provider.update(sessionId, field, value);
+      },
+      removeById: (sessionId: string): Promise<void> => {
+        return provider.removeById(sessionId);
+      },
+    };
+  }
+
+  public get ws(): NFunctionalityAgent.Ws {
+    return {
+      send: (sessionId, type, payload): void => {
+        this._wsAdapter.send(sessionId, type, payload);
+      },
+      broadcast: (sessionIds, type, payload): void => {
+        this._wsAdapter.broadcast(sessionIds, type, payload);
       },
     };
   }
