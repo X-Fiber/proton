@@ -79,10 +79,17 @@ export namespace NSchemaService {
     | "number[]"
     | "boolean"
     | "boolean[]";
+  export type QueryTypeParameter =
+    | string
+    | string[]
+    | number
+    | number[]
+    | boolean
+    | boolean[];
 
   export type QueryParams = {
     name: string;
-    format: QueryParameter;
+    format: QueryParameter[];
     scope: "required" | "optional";
   };
 

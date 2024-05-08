@@ -97,8 +97,15 @@ export namespace NAbstractHttpAdapter {
     | RedirectResponse<HEADERS>;
 
   export type Handler = (
-    request: Request,
+    request: Request<any, any, any, any>,
     agents: NSchemaService.Agents,
     context: Context
   ) => Promise<Response | void>;
+
+  export type SchemaParts = {
+    service: string;
+    domain: string;
+    version: string;
+    action: string;
+  };
 }

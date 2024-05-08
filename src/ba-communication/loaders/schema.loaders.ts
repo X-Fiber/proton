@@ -118,9 +118,9 @@ export class SchemaLoader implements ISchemaLoader {
         );
       }
 
-      if (path.includes("1") || path.includes("2") || path.includes("3")) {
+      if (path.includes(".")) {
         throw new Error(
-          "Endpoint name is not supported numbers. Please use slag string path"
+          "Endpoint name is not supported dots '.'. Please use slag string path"
         );
       }
 
@@ -131,7 +131,7 @@ export class SchemaLoader implements ISchemaLoader {
         const route = methods[method];
         if (route) {
           const version = route.version ?? "v1";
-          const name = `{1}${version}{1}{2}${path}{2}{3}${method.toUpperCase()}{3}`;
+          const name = `${version}.${path}.${method.toUpperCase()}`;
 
           if (storage.routes.has(name)) {
             throw new Error(
@@ -172,9 +172,9 @@ export class SchemaLoader implements ISchemaLoader {
         );
       }
 
-      if (path.includes("1") || path.includes("2") || path.includes("3")) {
+      if (path.includes(".")) {
         throw new Error(
-          "Event name is not supported numbers. Please use slag string path"
+          "Event name is not supported dots '.'. Please use slag string path"
         );
       }
 
@@ -185,7 +185,7 @@ export class SchemaLoader implements ISchemaLoader {
         const event = kinds[kind];
         if (event) {
           const version = event.version ?? "v1";
-          const name = `{1}${version}{1}{2}${event}{2}{3}${kind}{3}`;
+          const name = `${version}.${event}.${kind}`;
 
           if (storage.events.has(name)) {
             throw new Error(

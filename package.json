@@ -1,6 +1,6 @@
 {
-  "name": "@chaminjector/calculator",
-  "version": "0.0.37",
+  "name": "@x-fiber/proton",
+  "version": "0.0.1",
   "description": "Compute server for @chaminjector platform backend schemas.",
   "main": "index.js",
   "types": "index.d.ts",
@@ -8,9 +8,9 @@
     "./*"
   ],
   "keywords": [
-    "@chaminjector",
-    "@chaminjector/server",
-    "@chaminjector/core"
+    "@x-fiber",
+    "@x-fiber/core",
+    "@x-fiber/business-scheme"
   ],
   "exports": {
     ".": {
@@ -37,8 +37,7 @@
     "build:dist": "npm run build:packages && npm run add:types && npm run add:imports && npm run add:package",
     "resolve:path": "tsc-alias -v --dir dist/_cjs -p tsconfig.cjs.json && tsc-alias -v --dir dist/_types -p tsconfig.types.json",
     "build:prod": "npm run build:dist && npm run resolve:path",
-    "run:cjs:prod": "node ./_cjs/index.js",
-    "docs:dev": "docusaurus start --config ./documentations/docusaurus.config.ts --port 36011"
+    "run:cjs:prod": "node ./_cjs/index.js"
   },
   "author": {
     "email": "vladyslav.pestsov@gmail.com",

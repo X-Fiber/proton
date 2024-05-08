@@ -8,6 +8,7 @@ import { SCHEMA_SERVICES } from "~common";
 import type { IInitiator, NSchemaLoader } from "~types";
 
 const setServices = (services: NSchemaLoader.ServiceStructure[]): void => {
+  SCHEMA_SERVICES.length = 0;
   SCHEMA_SERVICES.push(...services);
 };
 

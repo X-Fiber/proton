@@ -1,13 +1,12 @@
 import { injectable, inject, fastify, uuid, jwt } from "~packages";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
-import { Helpers, Guards } from "~utils";
+import { Helpers } from "~utils";
 import { ResponseType, SchemaHeaders, StatusCode } from "~common";
 
 import { AbstractHttpAdapter } from "./abstract.http-adapter";
 
 import {
-  Fastify,
   HttpMethod,
   ModeObject,
   UnknownObject,
@@ -19,14 +18,15 @@ import {
   IFunctionalityAgent,
   NContextService,
   ISchemaAgent,
-  IExceptionProvider,
   IScramblerService,
   ISessionService,
   NScramblerService,
   ILocalizationProvider,
   IIntegrationAgent,
   NSchemaService,
+  ISchemaService,
 } from "~types";
+import * as querystring from "node:querystring";
 
 @injectable()
 export class FastifyHttpAdapter
@@ -51,7 +51,9 @@ export class FastifyHttpAdapter
     @inject(CoreSymbols.SessionService)
     private readonly _sessionService: ISessionService,
     @inject(CoreSymbols.LocalizationProvider)
-    private readonly _localizationService: ILocalizationProvider
+    private readonly _localizationService: ILocalizationProvider,
+    @inject(CoreSymbols.SchemaService)
+    private readonly _schemaService: ISchemaService
   ) {
     super();
 
@@ -110,25 +112,44 @@ export class FastifyHttpAdapter
       ignoreTrailingSlash: true,
       ignoreDuplicateSlashes: true,
     });
-    this._instance.all(this._config.urls.api + "*", this._apiHandler);
+    const httpMethods = [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+      "HEAD",
+      "TRACE",
+    ];
+    this._instance.route({
+      method: httpMethods,
+      handler: this._apiHandler,
+      url: this._config.urls.api + "/:service/:domain/:version/:action",
+    });
+    this._instance.route({
+      method: httpMethods,
+      handler: this._apiHandler,
+      url: this._config.urls.api + "/:service/:domain/:version/:action/*",
+    });
 
-    this._instance.addHook(
-      "onRequest",
-      (
-        request: Fastify.Request,
-        reply: Fastify.Response,
-        done: () => void
-      ): void => {
-        reply.headers(this._corsHeaders());
-
-        if (request.method === "OPTIONS") {
-          reply.status(200).send();
-          return;
-        }
-
-        done();
-      }
-    );
+    // this._instance.addHook(
+    //   "onRequest",
+    //   (
+    //     request: Fastify.Request,
+    //     reply: Fastify.Response,
+    //     done: () => void
+    //   ): void => {
+    //     reply.headers(this._corsHeaders());
+    //
+    //     if (request.method === "OPTIONS") {
+    //       reply.status(200).send();
+    //       return;
+    //     }
+    //
+    //     done();
+    //   }
+    // );
 
     const { protocol, host, port } = this._config;
 
@@ -199,43 +220,34 @@ export class FastifyHttpAdapter
     req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
     res: NAbstractHttpAdapter.AdapterResponse<"fastify">
   ): Promise<void> => {
-    // const chunks = req.url
-    //   .replace(this._config.urls.api, "")
-    //   .replace(/\/{2,}/g, "/")
-    //   .substring(1)
-    //   .split("/");
-    //
-    // if (chunks.length >= 4) {
-    //   console.log("assasaas");
-    // }
-    //
-    // const service1 = chunks[0]
-    // const domain1 = chunks[1]
-    // const version1 = chunks[2]
-    // const action1 = chunks[3]
-
-    const schemaResult = this._resolveSchemaHeaders(req.headers);
-    if (!schemaResult.ok) {
-      return res.status(StatusCode.BAD_REQUEST).send({
-        ResponseType: ResponseType.FAIL,
-        data: {
-          message: schemaResult.message,
-        },
-      });
-    }
-
-    const service = this._contextService.store.schema.get(schemaResult.service);
+    const service = this._schemaService.schema.get(req.params.service);
     if (!service) {
       return res
         .status(StatusCode.BAD_REQUEST)
-        .send(this._getNotFoundStructure("service"));
+        .send(
+          this._buildApiMessage(
+            "0001.0001",
+            `Service '${
+              req.params.service
+            }' not found. Supported services: ${Array.from(
+              this._schemaService.schema.keys()
+            )}`
+          )
+        );
     }
 
-    const domain = service.get(schemaResult.domain);
+    const domain = service.get(req.params.domain);
     if (!domain) {
       return res
         .status(StatusCode.BAD_REQUEST)
-        .send(this._getNotFoundStructure("domain"));
+        .send(
+          this._buildApiMessage(
+            "0001.0002",
+            `Domain '${req.params.domain}' not found in '${
+              req.params.service
+            }' service. Supported domains: ${Array.from(service.keys())}`
+          )
+        );
     }
 
     if (!domain.routes) {
@@ -247,48 +259,112 @@ export class FastifyHttpAdapter
       });
     }
 
-    const act = schemaResult.action + "{{" + req.method.toUpperCase() + "}}";
+    const act = `${req.params.version}.${
+      req.params.action
+    }.${req.method.toUpperCase()}`;
+
     const action = domain.routes.get(act);
     if (!action) {
       return res
         .status(StatusCode.BAD_REQUEST)
-        .send(this._getNotFoundStructure("action"));
+        .send(
+          this._buildApiMessage(
+            "0001.0003",
+            `Action '${req.params.action}' in version '${
+              req.params.version
+            }' and with http method '${req.method.toUpperCase()}' not found in '${
+              req.params.domain
+            }' domain in '${req.params.service}' service.`
+          )
+        );
     }
 
-    const inputParams: string[] = [];
-    if (req.url.includes("?")) {
-      const [params] = req.url.split("?");
-
-      inputParams.push(
-        ...params
-          .replace(this._config.urls.api, "")
-          .split("/")
-          .filter((p: string) => p.length > 0)
-      );
-    } else {
-      inputParams.push(
-        ...req.url
-          .replace(this._config.urls.api, "")
-          .split("/")
-          .filter((p: string) => p.length > 0)
-      );
-    }
-
-    let params: Record<string, string> = {};
-    if (action.params && inputParams.length > 0) {
-      params = action.params.reduce(
+    let headers: Record<string, string | null> = {};
+    if (action.headers && action.headers.length > 0) {
+      headers = action.headers.reduce(
         (
-          obj: Record<string, string>,
-          k: NSchemaService.RouteParams,
-          i: number
+          acc: { [key: string]: string | null },
+          header: NSchemaService.HeaderParams
         ) => {
-          obj[k["name"]] = inputParams[i];
-          return obj;
+          const h: string | null = req.headers[header.name];
+          switch (header.scope) {
+            case "required":
+              if (!h) {
+                return res
+                  .status(StatusCode.BAD_REQUEST)
+                  .send(
+                    this._buildApiMessage(
+                      "0001.0004",
+                      `Header '${header.name}' is required`
+                    )
+                  );
+              }
+              acc[header.name] = h;
+              break;
+            case "optional":
+              acc[header.name] = h ?? null;
+              break;
+            default:
+              throw Helpers.switchChecker(header.scope);
+          }
+          return acc;
         },
         {}
       );
     }
 
+    let params: Record<string, string | null> = {};
+    const dynamicParams = req.params["*"];
+    if (
+      action.params &&
+      action.params.length > 0 &&
+      dynamicParams &&
+      dynamicParams.length > 0
+    ) {
+      const dynamic: string[] = dynamicParams.split("/");
+
+      const obj: Record<
+        string,
+        { scope: "required" | "optional"; value: string }
+      > = {};
+      action.params.forEach(
+        (p, i) => (obj[p.name] = { scope: p.scope, value: dynamic[i] })
+      );
+
+      params = action.params.reduce(
+        (
+          acc: Record<string, string | null>,
+          param: NSchemaService.RouteParams
+        ) => {
+          const parameter = obj[param.name];
+          switch (parameter.scope) {
+            case "required":
+              if (!parameter.value) {
+                return res
+                  .status(StatusCode.BAD_REQUEST)
+                  .send(
+                    this._buildApiMessage(
+                      "0001.0004",
+                      `Header '${param.name}' is required`
+                    )
+                  );
+              } else {
+                acc[param.name] = parameter.value;
+              }
+              break;
+            case "optional":
+              acc[param.name] = parameter.value ?? null;
+              break;
+          }
+          return acc;
+        },
+        {}
+      );
+    }
+
+    console.log(params);
+
+    // TODO: resolve query params
     let queries: ModeObject = {};
     if (req.query) {
       queries = Helpers.parseQueryParams(Object.assign({}, req.query));
@@ -297,9 +373,9 @@ export class FastifyHttpAdapter
     const acceptLanguage = req.headers["accept-language"];
 
     const store: NContextService.Store = {
-      service: schemaResult.service,
-      domain: schemaResult.domain,
-      action: schemaResult.action,
+      service: req.params.service,
+      domain: req.params.domain,
+      action: req.params.action,
       method: req.method,
       path: req.url,
       ip: req.ip,
@@ -375,12 +451,12 @@ export class FastifyHttpAdapter
         const result = await action.handler(
           {
             method: req.method,
-            headers: req.headers,
+            headers: headers,
             body: req.body,
             params: params,
             path: req.routeOptions.url,
             url: req.url,
-            query: queries,
+            queries: queries,
           },
           {
             fnAgent: container.get<IFunctionalityAgent>(
@@ -398,27 +474,27 @@ export class FastifyHttpAdapter
           return res.status(StatusCode.NO_CONTENT).send();
         }
 
-        if (result.payload.headers) res.headers(result.payload.headers);
-
-        if (Guards.isJsonResponse(result.payload) && result.format === "json") {
-          return res
-            .status(result.payload.statusCode || StatusCode.SUCCESS)
-            .send({
-              type: result.payload.type,
-              data: result.payload.data,
-            });
-        } else if (
-          Guards.isRedirectResponse(result.payload) &&
-          result.format === "redirect"
-        ) {
-          return res
-            .status(result.payload.statusCode || StatusCode.FOUND)
-            .redirect(result.payload.url);
-        } else {
-          return res
-            .status(result.payload.statusCode || StatusCode.NO_CONTENT)
-            .send();
-        }
+        //   if (result.payload.headers) res.headers(result.payload.headers);
+        //
+        //   if (Guards.isJsonResponse(result.payload) && result.format === "json") {
+        //     return res
+        //       .status(result.payload.statusCode || StatusCode.SUCCESS)
+        //       .send({
+        //         type: result.payload.type,
+        //         data: result.payload.data,
+        //       });
+        //   } else if (
+        //     Guards.isRedirectResponse(result.payload) &&
+        //     result.format === "redirect"
+        //   ) {
+        //     return res
+        //       .status(result.payload.statusCode || StatusCode.FOUND)
+        //       .redirect(result.payload.url);
+        //   } else {
+        //     return res
+        //       .status(result.payload.statusCode || StatusCode.NO_CONTENT)
+        //       .send();
+        //   }
       });
     } catch (e) {
       console.error(e);
@@ -437,25 +513,7 @@ export class FastifyHttpAdapter
     }
   };
 
-  private _getNotFoundStructure(param: any) {
-    let message: string;
-    switch (param) {
-      case "service":
-        message = `Service "${param}" not found`;
-        break;
-      case "domain":
-        message = `Service "${param}" not found`;
-        break;
-      case "action":
-        message = `Service "${param}" not found`;
-        break;
-      default:
-        throw Helpers.switchChecker(param);
-    }
-
-    return {
-      responseType: ResponseType.FAIL,
-      data: { message },
-    };
+  private _buildApiMessage(code: string, message: string) {
+    return { type: "FAIL", code, message };
   }
 }
