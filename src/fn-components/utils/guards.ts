@@ -14,4 +14,16 @@ export class Guards {
   ): x is NContextService.RouteStore {
     return typeof x === "object" && "action" in x;
   }
+
+  public static isEvent(
+    x: NContextService.Store
+  ): x is NContextService.EventStore {
+    return typeof x === "object" && "event" in x;
+  }
+
+  public static isTopic(
+    x: NContextService.Store
+  ): x is NContextService.TopicStore {
+    return typeof x === "object" && "topic" in x;
+  }
 }

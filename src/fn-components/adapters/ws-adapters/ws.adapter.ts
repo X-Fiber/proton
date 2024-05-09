@@ -3,7 +3,7 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { AbstractWsAdapter } from "./abstract.ws-adapter";
 
-import {
+import type {
   Ws,
   Http,
   Https,
@@ -17,7 +17,6 @@ import {
   IFunctionalityAgent,
   ISchemaAgent,
   IIntegrationAgent,
-  NSchemaService,
 } from "~types";
 
 @injectable()

@@ -8,6 +8,7 @@ import {
   TypeormConnector,
   MongoConnector,
   ComputeConnector,
+  RabbitMQConnector,
 } from "../connectors";
 import {
   SchemaLoader,
@@ -18,7 +19,7 @@ import {
 import {
   ContextService,
   DiscoveryService,
-  ConfigurationService,
+  CombinationService,
   LocalizationProvider,
   LoggerService,
   PermissionProvider,
@@ -34,6 +35,7 @@ import {
   HttpFactory,
   WsFactory,
   WsAdapter,
+  RabbitMQTunnel,
 } from "~fn-components";
 
 import type {
@@ -65,6 +67,8 @@ import type {
   IDiscoveryService,
   IAbstractService,
   IPermissionProvider,
+  IRabbitMQConnector,
+  IRabbitMQTunnel,
 } from "~types";
 
 export const CoreModule = new inversify.ContainerModule(
@@ -76,6 +80,9 @@ export const CoreModule = new inversify.ContainerModule(
     bind<IComputeConnector>(CoreSymbols.ServiceConnector)
       .to(ComputeConnector)
       .inSingletonScope();
+    bind<IIntegrationConnector>(CoreSymbols.IntegrationConnector)
+      .to(IntegrationConnector)
+      .inSingletonScope();
     bind<IMongoConnector>(CoreSymbols.MongoConnector)
       .to(MongoConnector)
       .inSingletonScope();
@@ -85,8 +92,8 @@ export const CoreModule = new inversify.ContainerModule(
     bind<IRedisConnector>(CoreSymbols.RedisConnector)
       .to(RedisConnector)
       .inSingletonScope();
-    bind<IIntegrationConnector>(CoreSymbols.IntegrationConnector)
-      .to(IntegrationConnector)
+    bind<IRabbitMQConnector>(CoreSymbols.RabbitMQConnector)
+      .to(RabbitMQConnector)
       .inSingletonScope();
 
     // Services
@@ -106,8 +113,8 @@ export const CoreModule = new inversify.ContainerModule(
       .to(ScramblerService)
       .inSingletonScope();
 
-    bind<IAbstractService>(CoreSymbols.GetawayService)
-      .to(ConfigurationService)
+    bind<IAbstractService>(CoreSymbols.CombinationService)
+      .to(CombinationService)
       .inSingletonScope();
 
     // Providers
@@ -133,6 +140,9 @@ export const CoreModule = new inversify.ContainerModule(
       .inTransientScope();
     bind<IRedisTunnel>(CoreSymbols.RedisTunnel)
       .to(RedisTunnel)
+      .inTransientScope();
+    bind<IRabbitMQTunnel>(CoreSymbols.RabbitMQTunnel)
+      .to(RabbitMQTunnel)
       .inTransientScope();
 
     // Integrations

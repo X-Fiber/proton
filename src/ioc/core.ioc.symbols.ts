@@ -4,16 +4,17 @@ export const CoreSymbols = {
 
   // Connectors
   ServiceConnector: Symbol("ServiceConnector"),
+  IntegrationConnector: Symbol("IntegrationConnector"),
   MongoConnector: Symbol("MongoConnector"),
   TypeormConnector: Symbol("TypeormConnector"),
   RedisConnector: Symbol("RedisConnector"),
-  IntegrationConnector: Symbol("IntegrationConnector"),
+  RabbitMQConnector: Symbol("RabbitMQConnector"),
 
   // Services
   DiscoveryService: Symbol("DiscoveryService"),
   LoggerService: Symbol("LoggerService"),
   SchemaService: Symbol("SchemaService"),
-  GetawayService: Symbol("GetawayService"),
+  CombinationService: Symbol("CombinationService"),
   ContextService: Symbol("ContextService"),
   ScramblerService: Symbol("ScramblerService"),
   SessionProvider: Symbol("SessionProvider"),
@@ -27,6 +28,7 @@ export const CoreSymbols = {
   MongoTunnel: Symbol("MongoTunnel"),
   TypeormTunnel: Symbol("TypeormTunnel"),
   RedisTunnel: Symbol("RedisTunnel"),
+  RabbitMQTunnel: Symbol("RabbitMQTunnel"),
 
   // Integrations
   MailIntegration: Symbol("MailIntegration"),

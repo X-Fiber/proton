@@ -29,36 +29,8 @@ export abstract class AbstractHttpAdapter<
   public abstract start(): Promise<void>;
   public abstract stop(): Promise<void>;
 
-  protected abstract _apiHandler(
+  protected abstract _callApi(
     req: NAbstractHttpAdapter.AdapterRequest<K>,
     context: NAbstractHttpAdapter.Context<UnknownObject>
   ): Promise<NAbstractHttpAdapter.AdapterResponse<K>>;
-
-  protected _resolveSchemaHeaders(headers: Record<string, string>): any {
-    if (!headers[SchemaHeaders.X_SERVICE_NAME]) {
-      return {
-        ok: false,
-        message: '"x-service-name" header not found',
-      };
-    }
-    if (!headers[SchemaHeaders.X_DOMAIN_NAME]) {
-      return {
-        ok: false,
-        message: '"x-domain-name" header not found',
-      };
-    }
-    if (!headers[SchemaHeaders.X_ACTION_NAME]) {
-      return {
-        ok: false,
-        message: '"x-action-name" header not found',
-      };
-    }
-
-    return {
-      ok: true,
-      service: headers[SchemaHeaders.X_SERVICE_NAME],
-      domain: headers[SchemaHeaders.X_DOMAIN_NAME],
-      action: headers[SchemaHeaders.X_ACTION_NAME],
-    };
-  }
 }

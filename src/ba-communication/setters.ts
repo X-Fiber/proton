@@ -26,6 +26,12 @@ export const setEmitter = <E extends string>(
   return structure;
 };
 
+export const setBroker = <E extends string>(
+  structure: NSchemaLoader.BrokerStructure<E>
+): NSchemaLoader.BrokerStructure<E> => {
+  return structure;
+};
+
 export const setHelper = <T extends Record<string, AnyFn>>(structure: T) => {
   return structure;
 };

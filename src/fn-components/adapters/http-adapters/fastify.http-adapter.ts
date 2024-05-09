@@ -20,7 +20,6 @@ import {
   ISchemaAgent,
   IScramblerService,
   NScramblerService,
-  ILocalizationProvider,
   IIntegrationAgent,
   NSchemaService,
   ISchemaService,
@@ -119,12 +118,12 @@ export class FastifyHttpAdapter
     ];
     this._instance.route({
       method: httpMethods,
-      handler: this._apiHandler,
+      handler: this._callApi,
       url: this._config.urls.api + "/:service/:domain/:version/:action",
     });
     this._instance.route({
       method: httpMethods,
-      handler: this._apiHandler,
+      handler: this._callApi,
       url: this._config.urls.api + "/:service/:domain/:version/:action/*",
     });
 
@@ -211,7 +210,7 @@ export class FastifyHttpAdapter
     });
   }
 
-  protected _apiHandler = async (
+  protected _callApi = async (
     req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
     res: NAbstractHttpAdapter.AdapterResponse<"fastify">
   ): Promise<void> => {
@@ -374,7 +373,7 @@ export class FastifyHttpAdapter
       path: req.url,
       ip: req.ip,
       requestId: uuid.v4(),
-      schema: this._contextService.store.schema,
+      schema: this._schemaService.schema,
       language: acceptLanguage,
     };
 

@@ -1,4 +1,4 @@
-import { Joi, Typeorm } from "../../packages";
+import { Joi, RabbitMQ, Typeorm } from "../../packages";
 import { IAbstractService } from "./abstract.service";
 import { NMongoProvider } from "../tunnels";
 import {
@@ -16,6 +16,7 @@ import {
 } from "../utils";
 import { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
 import { NContextService } from "./context.service";
+import { NRabbitMQConnector } from "../../connectors";
 
 export interface ISchemaService extends IAbstractService {
   readonly schema: NSchemaService.BusinessScheme;
@@ -148,6 +149,7 @@ export namespace NSchemaService {
     routes: Map<string, Route>;
     events: Map<string, Event>;
     helper: Map<string, AnyFn>;
+    broker: Map<string, NRabbitMQConnector.Topic>;
     dictionaries: Map<string, ExtendedRecordObject>;
     validator: Map<string, ValidatorHandler>;
     typeorm?: {

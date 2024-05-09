@@ -7,7 +7,8 @@ import {
   NMongoProvider,
 } from "../../fn-components";
 import { Typeorm } from "../../packages";
-import { Handler } from "../../fn-components/adapters/abstract.http-adapter";
+import { NRabbitMQConnector } from "../../connectors";
+
 export interface ISchemaLoader {
   readonly services: NSchemaService.BusinessScheme;
 
@@ -38,6 +39,10 @@ export namespace NSchemaLoader {
         handler: any;
       };
     };
+  };
+
+  export type BrokerStructure<T extends string = string> = {
+    [key in T]: NRabbitMQConnector.Topic;
   };
 
   export type DictionaryStructure<
@@ -93,13 +98,14 @@ export namespace NSchemaLoader {
   };
 
   export type MongoSchemaStructure<T> = (
-    agents: NAbstractHttpAdapter.Agents
+    agents: NSchemaService.Agents
   ) => NMongoProvider.Schema<T>;
 
   export type DocumentsStructure = {
     router?: RouterStructure;
     emitter?: EmitterStructure;
     helper?: HelperStructure;
+    broker?: BrokerStructure;
     dictionaries?: DictionaryStructure | DictionaryStructure[];
     validator?: ValidatorStructure;
     typeorm?: {

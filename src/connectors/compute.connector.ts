@@ -28,7 +28,7 @@ export class ComputeConnector
     private readonly _scramblerService: IScramblerService,
     @inject(CoreSymbols.SchemaService)
     private readonly _schemaService: ISchemaService,
-    @inject(CoreSymbols.GetawayService)
+    @inject(CoreSymbols.CombinationService)
     private readonly _getawayService: IAbstractService,
     @inject(CoreSymbols.ContextService)
     private readonly _contextService: IContextService

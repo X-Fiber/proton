@@ -23,8 +23,10 @@ import {
   IPermissionProvider,
   IAbstractWsAdapter,
   ILoggerService,
-  NContextService,
   NLoggerService,
+  IRabbitMQTunnel,
+  NRabbitMQConnector,
+  NRabbitMQTunnel,
 } from "~types";
 
 @injectable()
@@ -80,8 +82,8 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       version: store.version,
       service: store.service,
       domain: store.domain,
-      event: Guards.isRoute(store) ? undefined : store.event,
-      type: Guards.isRoute(store) ? undefined : store.type,
+      event: Guards.isEvent(store) ? store.event : undefined,
+      type: Guards.isEvent(store) ? store.type : undefined,
     };
 
     return {
@@ -181,17 +183,6 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       removeById: (sessionId: string): Promise<void> => {
         return provider.removeById(sessionId);
-      },
-    };
-  }
-
-  public get ws(): NFunctionalityAgent.Ws {
-    return {
-      send: (sessionId, type, payload): void => {
-        this._wsAdapter.send(sessionId, type, payload);
-      },
-      broadcast: (sessionIds, type, payload): void => {
-        this._wsAdapter.broadcast(sessionIds, type, payload);
       },
     };
   }
@@ -337,6 +328,36 @@ export class FunctionalityAgent implements IFunctionalityAgent {
         events: EV
       ): Promise<void> => {
         return provider.removeEvent(role, events);
+      },
+    };
+  }
+
+  public get ws(): NFunctionalityAgent.Ws {
+    return {
+      send: (sessionId, type, payload): void => {
+        this._wsAdapter.send(sessionId, type, payload);
+      },
+      broadcast: (sessionIds, type, payload): void => {
+        this._wsAdapter.broadcast(sessionIds, type, payload);
+      },
+    };
+  }
+
+  public get broker(): NFunctionalityAgent.Broker {
+    const tunnel = container.get<IRabbitMQTunnel>(CoreSymbols.RabbitMQTunnel);
+
+    return {
+      sendToQueue: <
+        P,
+        A extends NRabbitMQConnector.AuthScope = NRabbitMQConnector.AuthScope
+      >(
+        queue: string,
+        payload: NRabbitMQTunnel.QueuePayload<P, A>
+      ): void => {
+        const { store } = this._contextService;
+
+        const name = `${store.service}.${store.domain}.${store.version}.${queue}`;
+        tunnel.sendToQueue<P, A>(name, payload);
       },
     };
   }

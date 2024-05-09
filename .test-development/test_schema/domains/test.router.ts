@@ -1,5 +1,6 @@
 import { setRouter } from "../../../src";
 import { NTest } from "./test";
+import { NSchemaService } from "../../../types";
 
 export const testRouter = setRouter<NTest.Paths>({
   test: {
@@ -41,7 +42,11 @@ export const testRouter = setRouter<NTest.Paths>({
           scope: "optional",
         },
       ],
-      handler: async (request: any, agents: any) => {},
+      handler: async (request: any, agents: NSchemaService.Agents) => {
+        agents.fnAgent.broker.sendToQueue<{ local: 1 }, "public">("test", {
+          local: 1,
+        });
+      },
     },
   },
 });
