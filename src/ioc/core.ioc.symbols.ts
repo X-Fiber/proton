@@ -13,16 +13,17 @@ export const CoreSymbols = {
   // Services
   DiscoveryService: Symbol("DiscoveryService"),
   LoggerService: Symbol("LoggerService"),
-  SchemaService: Symbol("SchemaService"),
+  SchemeService: Symbol("SchemeService"),
   CombinationService: Symbol("CombinationService"),
   ContextService: Symbol("ContextService"),
   ScramblerService: Symbol("ScramblerService"),
-  SessionProvider: Symbol("SessionProvider"),
+  TaskService: Symbol("TaskService"),
 
   // Providers
   ExceptionProvider: Symbol("ExceptionProvider"),
   LocalizationProvider: Symbol("LocalizationProvider"),
   PermissionProvider: Symbol("PermissionProvider"),
+  SessionProvider: Symbol("SessionProvider"),
 
   // Tunnels
   MongoTunnel: Symbol("MongoTunnel"),

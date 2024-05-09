@@ -36,6 +36,7 @@ import {
   WsFactory,
   WsAdapter,
   RabbitMQTunnel,
+  TaskService,
 } from "~fn-components";
 
 import type {
@@ -51,7 +52,7 @@ import type {
   IMongoTunnel,
   ISchemaAgent,
   ISchemaLoader,
-  ISchemaService,
+  ISchemeService,
   IComputeConnector,
   ITypeormConnector,
   ITypeormTunnel,
@@ -69,6 +70,7 @@ import type {
   IPermissionProvider,
   IRabbitMQConnector,
   IRabbitMQTunnel,
+  ITaskService,
 } from "~types";
 
 export const CoreModule = new inversify.ContainerModule(
@@ -103,7 +105,7 @@ export const CoreModule = new inversify.ContainerModule(
     bind<ILoggerService>(CoreSymbols.LoggerService)
       .to(LoggerService)
       .inSingletonScope();
-    bind<ISchemaService>(CoreSymbols.SchemaService)
+    bind<ISchemeService>(CoreSymbols.SchemeService)
       .to(SchemaService)
       .inSingletonScope();
     bind<IContextService>(CoreSymbols.ContextService)
@@ -111,6 +113,9 @@ export const CoreModule = new inversify.ContainerModule(
       .inSingletonScope();
     bind<IScramblerService>(CoreSymbols.ScramblerService)
       .to(ScramblerService)
+      .inSingletonScope();
+    bind<ITaskService>(CoreSymbols.TaskService)
+      .to(TaskService)
       .inSingletonScope();
 
     bind<IAbstractService>(CoreSymbols.CombinationService)

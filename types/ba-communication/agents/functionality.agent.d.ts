@@ -8,6 +8,7 @@ import type {
   IRouteException,
   IScramblerService,
   ISessionProvider,
+  ITaskService,
   ITypeormTunnel,
   NExceptionProvider,
 } from "../../fn-components";
@@ -20,6 +21,7 @@ export interface IFunctionalityAgent {
   readonly sessions: NFunctionalityAgent.Sessions;
   readonly exception: NFunctionalityAgent.Exception;
   readonly permissions: NFunctionalityAgent.Permissions;
+  readonly scheduler: NFunctionalityAgent.Scheduler;
   readonly ws: NFunctionalityAgent.Ws;
   readonly broker: NFunctionalityAgent.Broker;
 }
@@ -113,5 +115,15 @@ export namespace NFunctionalityAgent {
     removeRoute: IPermissionProvider["removeRoute"];
     addEvent: IPermissionProvider["addEvent"];
     removeEvent: IPermissionProvider["removeEvent"];
+  };
+
+  export type Scheduler = {
+    on: ITaskService["on"];
+    once: ITaskService["once"];
+    off: ITaskService["off"];
+    removeListener: ITaskService["removeListener"];
+    get: ITaskService["get"];
+    set: ITaskService["set"];
+    delete: ITaskService["delete"];
   };
 }

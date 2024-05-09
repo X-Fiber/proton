@@ -7,6 +7,9 @@ export interface IDiscoveryService extends IAbstractService {
   on(event: NDiscoveryService.Event, listener: NAbstractService.Listener): void;
   reloadConfigurations(): Promise<void>;
 
+  getOptional<T>(
+    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>
+  ): T | undefined;
   getMandatory<T>(
     name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>
   ): T;
@@ -61,7 +64,7 @@ export namespace NDiscoveryService {
 
   export type KeyBuilder<
     T,
-    F extends string | boolean | number
+    F extends string | boolean | number | any
   > = T extends Record<string, unknown>
     ? {
         [K in keyof T]: T[K] extends F
@@ -355,6 +358,18 @@ export namespace NDiscoveryService {
         accessExpiredAt: number;
         refreshExpiredAt: number;
         defaultAlgorithm: string;
+      };
+      scheduler: {
+        enable: boolean;
+        maxTask?: number | "no-validate";
+        periodicity: number;
+        workers: {
+          minWorkers?: number | "max";
+          maxWorkers?: number;
+          maxQueueSize?: number;
+          workerType?: "auto" | "web" | "process" | "thread";
+          workerTerminateTimeout?: number;
+        };
       };
     };
   };

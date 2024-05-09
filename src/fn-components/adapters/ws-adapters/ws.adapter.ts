@@ -12,7 +12,7 @@ import type {
   IAbstractWsAdapter,
   NAbstractWsAdapter,
   IContextService,
-  ISchemaService,
+  ISchemeService,
   NContextService,
   IFunctionalityAgent,
   ISchemaAgent,
@@ -35,8 +35,8 @@ export class WsAdapter
     protected readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
     protected readonly _loggerService: ILoggerService,
-    @inject(CoreSymbols.SchemaService)
-    private readonly _schemaService: ISchemaService,
+    @inject(CoreSymbols.SchemeService)
+    private readonly _schemaService: ISchemeService,
     @inject(CoreSymbols.ContextService)
     private readonly _contextService: IContextService
   ) {

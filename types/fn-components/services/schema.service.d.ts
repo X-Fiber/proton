@@ -18,7 +18,7 @@ import { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
 import { NContextService } from "./context.service";
 import { NRabbitMQConnector } from "../../connectors";
 
-export interface ISchemaService extends IAbstractService {
+export interface ISchemeService extends IAbstractService {
   readonly schema: NSchemaService.BusinessScheme;
 
   getMongoRepository<T extends FnObject = FnObject>(): T;

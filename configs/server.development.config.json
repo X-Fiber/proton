@@ -17,5 +17,10 @@
     "rabbitMQ": {
       "enable": true
     }
+  },
+  "services": {
+    "scheduler": {
+      "enable": true
+    }
   }
 }

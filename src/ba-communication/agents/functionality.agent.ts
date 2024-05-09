@@ -3,7 +3,8 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { Guards, Helpers } from "~utils";
 
-import {
+import type {
+  AnyFn,
   Jwt,
   Nullable,
   UnknownObject,
@@ -27,6 +28,9 @@ import {
   IRabbitMQTunnel,
   NRabbitMQConnector,
   NRabbitMQTunnel,
+  NTaskScheduler,
+  ITaskService,
+  ITaskScheduler,
 } from "~types";
 
 @injectable()
@@ -40,6 +44,8 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     private readonly _scramblerService: IScramblerService,
     @inject(CoreSymbols.ContextService)
     private readonly _contextService: IContextService,
+    @inject(CoreSymbols.TaskService)
+    private readonly _taskService: ITaskService,
     @inject(CoreSymbols.WsAdapter)
     private readonly _wsAdapter: IAbstractWsAdapter
   ) {}
@@ -328,6 +334,35 @@ export class FunctionalityAgent implements IFunctionalityAgent {
         events: EV
       ): Promise<void> => {
         return provider.removeEvent(role, events);
+      },
+    };
+  }
+
+  public get scheduler(): NFunctionalityAgent.Scheduler {
+    return {
+      on: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.on(event, listener);
+      },
+      once: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.on(event, listener);
+      },
+      off: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.off(event, listener);
+      },
+      removeListener: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.removeListener(event, listener);
+      },
+      set: <K extends string>(
+        name: K,
+        task: NTaskScheduler.Task
+      ): ITaskScheduler => {
+        return this._taskService.set(name, task);
+      },
+      get: <K extends string>(event: K): NTaskScheduler.Task | undefined => {
+        return this._taskService.get<K>(event);
+      },
+      delete: <K extends string>(event: K): boolean => {
+        return this._taskService.delete(event);
       },
     };
   }

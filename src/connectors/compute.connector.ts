@@ -6,12 +6,11 @@ import type {
   IDiscoveryService,
   ILoggerService,
   IContextService,
-  ISchemaService,
+  ISchemeService,
   IScramblerService,
   IComputeConnector,
-  ISessionProvider,
   IAbstractService,
-  IPermissionProvider,
+  ITaskService,
 } from "~types";
 
 @injectable()
@@ -24,14 +23,16 @@ export class ComputeConnector
     private readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
     private readonly _loggerService: ILoggerService,
+    @inject(CoreSymbols.ContextService)
+    private readonly _contextService: IContextService,
+    @inject(CoreSymbols.SchemeService)
+    private readonly _schemeService: ISchemeService,
+    @inject(CoreSymbols.CombinationService)
+    private readonly _combinationService: IAbstractService,
     @inject(CoreSymbols.ScramblerService)
     private readonly _scramblerService: IScramblerService,
-    @inject(CoreSymbols.SchemaService)
-    private readonly _schemaService: ISchemaService,
-    @inject(CoreSymbols.CombinationService)
-    private readonly _getawayService: IAbstractService,
-    @inject(CoreSymbols.ContextService)
-    private readonly _contextService: IContextService
+    @inject(CoreSymbols.TaskService)
+    private readonly _taskService: ITaskService
   ) {
     super();
   }
@@ -40,14 +41,16 @@ export class ComputeConnector
     await this._discoveryService.start();
     await this._loggerService.start();
     await this._contextService.start();
-    await this._getawayService.start();
+    await this._schemeService.start();
+    await this._combinationService.start();
     await this._scramblerService.start();
-    await this._schemaService.start();
+    await this._taskService.start();
   }
   public async stop(): Promise<void> {
-    await this._getawayService.stop();
-    await this._schemaService.stop();
+    await this._taskService.stop();
     await this._scramblerService.stop();
+    await this._combinationService.stop();
+    await this._schemeService.stop();
     await this._contextService.stop();
     await this._loggerService.stop();
     await this._discoveryService.stop();

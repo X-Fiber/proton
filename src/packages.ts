@@ -21,6 +21,7 @@ import libIoredis from "ioredis";
 import libWs from "ws";
 import { v4 } from "uuid";
 import libAmqp from "amqplib/callback_api";
+import libWorkerpool from "workerpool";
 
 export { injectable, inject } from "inversify";
 
@@ -107,6 +108,10 @@ export const ws = {
 
 export const ioredis = {
   ioredis: libIoredis,
+};
+
+export const workerpool = {
+  pool: libWorkerpool.pool,
 };
 
 export { colors };

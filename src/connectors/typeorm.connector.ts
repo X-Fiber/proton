@@ -9,7 +9,7 @@ import type {
   ILoggerService,
   ITypeormConnector,
   NTypeormConnector,
-  ISchemaService,
+  ISchemeService,
 } from "~types";
 
 @injectable()
@@ -27,8 +27,8 @@ export class TypeormConnector
     private readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
     private readonly _loggerService: ILoggerService,
-    @inject(CoreSymbols.SchemaService)
-    private readonly _schemaService: ISchemaService
+    @inject(CoreSymbols.SchemeService)
+    private readonly _schemaService: ISchemeService
   ) {
     super();
 

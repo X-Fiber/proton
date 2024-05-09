@@ -1,5 +1,6 @@
 import { injectable, inject } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { container } from "~container";
 import { AbstractService } from "./abstract.service";
 
 import type {
@@ -8,9 +9,7 @@ import type {
   IDiscoveryService,
   IExceptionProvider,
   ILoggerService,
-  IRabbitMQTunnel,
 } from "~types";
-import { container } from "~container";
 
 @injectable()
 export class CombinationService extends AbstractService {

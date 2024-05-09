@@ -22,7 +22,7 @@ import {
   NScramblerService,
   IIntegrationAgent,
   NSchemaService,
-  ISchemaService,
+  ISchemeService,
   ISessionProvider,
 } from "~types";
 
@@ -46,8 +46,8 @@ export class FastifyHttpAdapter
     protected readonly _contextService: IContextService,
     @inject(CoreSymbols.ScramblerService)
     private readonly _scramblerService: IScramblerService,
-    @inject(CoreSymbols.SchemaService)
-    private readonly _schemaService: ISchemaService
+    @inject(CoreSymbols.SchemeService)
+    private readonly _schemaService: ISchemeService
   ) {
     super();
 

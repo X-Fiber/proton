@@ -12,7 +12,7 @@ import {
   ILoggerService,
   ISchemaLoader,
   NSchemaLoader,
-  ISchemaService,
+  ISchemeService,
   NSchemaService,
   NAbstractService,
   IContextService,
@@ -29,7 +29,7 @@ import {
 } from "~types";
 
 @injectable()
-export class SchemaService extends AbstractService implements ISchemaService {
+export class SchemaService extends AbstractService implements ISchemeService {
   protected readonly _SERVICE_NAME = SchemaService.name;
   private _config: NSchemaService.Config | undefined;
   private _SCHEMA: NSchemaService.BusinessScheme | undefined;

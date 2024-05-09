@@ -6,7 +6,7 @@ import {
   ExtendedRecordObject,
   FnObject,
   ISchemaAgent,
-  ISchemaService,
+  ISchemeService,
   KeyStringLiteralBuilder,
   NSchemaService,
 } from "~types";
@@ -14,8 +14,8 @@ import {
 @injectable()
 export class SchemaAgent implements ISchemaAgent {
   constructor(
-    @inject(CoreSymbols.SchemaService)
-    private readonly _schemaService: ISchemaService
+    @inject(CoreSymbols.SchemeService)
+    private readonly _schemaService: ISchemeService
   ) {}
 
   public get schema(): NSchemaService.BusinessScheme {

@@ -63,6 +63,16 @@ export class DiscoveryService
     this._serverTag = undefined;
   }
 
+  public getOptional<T>(
+    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>
+  ): T | undefined {
+    try {
+      return this._absDiscoveryService.getMandatory<T>(name);
+    } catch {
+      return undefined;
+    }
+  }
+
   public getMandatory<T>(name: string): T {
     return this._absDiscoveryService.getMandatory(name);
   }

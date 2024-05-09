@@ -7,7 +7,7 @@ import type {
   ILoggerService,
   ILocalizationProvider,
   ExtendedRecordObject,
-  ISchemaService,
+  ISchemeService,
 } from "~types";
 
 @injectable()
@@ -17,8 +17,8 @@ export class LocalizationProvider implements ILocalizationProvider {
     protected readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
     protected readonly _loggerService: ILoggerService,
-    @inject(CoreSymbols.SchemaService)
-    private readonly _schemaService: ISchemaService
+    @inject(CoreSymbols.SchemeService)
+    private readonly _schemaService: ISchemeService
   ) {}
 
   public getDictionary(service: string, domain: string, language: string) {
