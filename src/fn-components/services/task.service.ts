@@ -318,36 +318,40 @@ export class TaskService extends AbstractService implements ITaskService {
         "services.scheduler.enable",
         this._config.enable
       ),
-      maxTask:
-        this._discoveryService.getOptional<number | "no-validate" | undefined>(
-          "services.scheduler.maxTask"
-        ) ?? this._config.maxTask,
+      maxTask: this._discoveryService.getOptional<
+        number | "no-validate" | undefined
+      >("services.scheduler.maxTask", this._config.maxTask),
       periodicity: this._discoveryService.getNumber(
         "services.scheduler.periodicity",
         this._config.periodicity
       ),
       workers: {
-        minWorkers:
-          this._discoveryService.getOptional<number | "max" | undefined>(
-            "services.scheduler.workers.minWorkers"
-          ) ?? this._config.workers.minWorkers,
-        maxWorkers:
-          this._discoveryService.getOptional<number | undefined>(
-            "services.scheduler.workers.maxWorkers"
-          ) ?? this._config.workers.maxWorkers,
-        maxQueueSize:
-          this._discoveryService.getOptional<number | undefined>(
-            "services.scheduler.workers.maxQueueSize"
-          ) ?? this._config.workers.maxQueueSize,
-        workerType:
-          this._discoveryService.getOptional<
-            "auto" | "web" | "process" | "thread" | undefined
-          >("services.scheduler.workers.workerType") ??
-          this._config.workers.workerType,
-        workerTerminateTimeout:
-          this._discoveryService.getOptional<number | undefined>(
-            "services.scheduler.workers.workerTerminateTimeout"
-          ) ?? this._config.workers.workerTerminateTimeout,
+        minWorkers: this._discoveryService.getOptional<
+          number | "max" | undefined
+        >(
+          "services.scheduler.workers.minWorkers",
+          this._config.workers.minWorkers
+        ),
+        maxWorkers: this._discoveryService.getOptional<number | undefined>(
+          "services.scheduler.workers.maxWorkers",
+          this._config.workers.maxWorkers
+        ),
+        maxQueueSize: this._discoveryService.getOptional<number | undefined>(
+          "services.scheduler.workers.maxQueueSize",
+          this._config.workers.maxQueueSize
+        ),
+        workerType: this._discoveryService.getOptional<
+          "auto" | "web" | "process" | "thread" | undefined
+        >(
+          "services.scheduler.workers.workerType",
+          this._config.workers.workerType
+        ),
+        workerTerminateTimeout: this._discoveryService.getOptional<
+          number | undefined
+        >(
+          "services.scheduler.workers.workerTerminateTimeout",
+          this._config.workers.workerTerminateTimeout
+        ),
       },
     };
   }

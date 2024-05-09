@@ -7,9 +7,10 @@ export interface IDiscoveryService extends IAbstractService {
   on(event: NDiscoveryService.Event, listener: NAbstractService.Listener): void;
   reloadConfigurations(): Promise<void>;
 
-  getOptional<T>(
-    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>
-  ): T | undefined;
+  getOptional<K, T extends K | undefined = K | undefined>(
+    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>,
+    def: K
+  ): K;
   getMandatory<T>(
     name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>
   ): T;
@@ -281,6 +282,7 @@ export namespace NDiscoveryService {
         };
         urls: {
           api: string;
+          stream: string;
         };
       };
       ws: {
@@ -369,6 +371,24 @@ export namespace NDiscoveryService {
           maxQueueSize?: number;
           workerType?: "auto" | "web" | "process" | "thread";
           workerTerminateTimeout?: number;
+        };
+      };
+    };
+    strategies: {
+      fileStorage: {
+        enable: boolean;
+        type: string;
+        buffer: {
+          valueTimeout?: number;
+          interval?: number;
+          updateTimeOnGet?: boolean;
+        };
+        limits: {
+          fieldNameSize: number;
+          fieldSize: number;
+          fields: number;
+          fileSize: number;
+          parts: number;
         };
       };
     };

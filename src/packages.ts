@@ -16,7 +16,7 @@ import libBcrypt from "bcrypt";
 import libWinston from "winston";
 import libJoi from "joi";
 import libNodemailer from "nodemailer";
-import libFastify from "fastify";
+import libFastify, { FastifyError } from "fastify";
 import libIoredis from "ioredis";
 import libWs from "ws";
 import { v4 } from "uuid";

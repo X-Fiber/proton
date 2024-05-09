@@ -18,6 +18,7 @@ export const CoreSymbols = {
   ContextService: Symbol("ContextService"),
   ScramblerService: Symbol("ScramblerService"),
   TaskService: Symbol("TaskService"),
+  StreamService: Symbol("StreamService"),
 
   // Providers
   ExceptionProvider: Symbol("ExceptionProvider"),
@@ -49,4 +50,8 @@ export const CoreSymbols = {
   // Factories
   HttpFactory: Symbol("HttpFactory"),
   WsFactory: Symbol("WsFactory"),
+  FileStorageFactory: Symbol("FileStorageFactory"),
+
+  // Strategies
+  BufferFileStorageStrategy: Symbol("BufferFileStorageStrategy"),
 } as const;

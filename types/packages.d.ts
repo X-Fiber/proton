@@ -59,6 +59,7 @@ export namespace Fastify {
   export type Request = fastify.FastifyRequest;
   export type Response = fastify.FastifyReply;
   export type Instance = fastify.FastifyInstance;
+  export type FastifyError = fastify.FastifyError;
 
   export type SchemaRequest<
     BODY = UnknownObject,

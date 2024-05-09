@@ -37,6 +37,8 @@ import {
   WsAdapter,
   RabbitMQTunnel,
   TaskService,
+  FileStorageFactory,
+  BufferFileStorageStrategy,
 } from "~fn-components";
 
 import type {
@@ -71,6 +73,7 @@ import type {
   IRabbitMQConnector,
   IRabbitMQTunnel,
   ITaskService,
+  IAbstractFileStorageStrategy,
 } from "~types";
 
 export const CoreModule = new inversify.ContainerModule(
@@ -185,6 +188,14 @@ export const CoreModule = new inversify.ContainerModule(
       .inSingletonScope();
     bind<IAbstractFactory>(CoreSymbols.WsFactory)
       .to(WsFactory)
+      .inSingletonScope();
+    bind<IAbstractFactory>(CoreSymbols.FileStorageFactory)
+      .to(FileStorageFactory)
+      .inSingletonScope();
+
+    // Strategies
+    bind<IAbstractFileStorageStrategy>(CoreSymbols.BufferFileStorageStrategy)
+      .to(BufferFileStorageStrategy)
       .inSingletonScope();
   }
 );

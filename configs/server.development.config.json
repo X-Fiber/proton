@@ -18,9 +18,10 @@
       "enable": true
     }
   },
-  "services": {
-    "scheduler": {
-      "enable": true
+  "strategies": {
+    "fileStorage": {
+      "enable": true,
+      "type": "buffer"
     }
   }
 }

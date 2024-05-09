@@ -17,6 +17,7 @@ import {
 import { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
 import { NContextService } from "./context.service";
 import { NRabbitMQConnector } from "../../connectors";
+import { NStreamService } from "./stream.service";
 
 export interface ISchemeService extends IAbstractService {
   readonly schema: NSchemaService.BusinessScheme;
@@ -96,7 +97,18 @@ export namespace NSchemaService {
     params: RouteParams[] | null;
     headers: HeaderParams[] | null;
     queries: QueryParams[] | null;
-    handler: NAbstractHttpAdapter.Handler;
+    handler: NAbstractHttpAdapter.ApiHandler;
+  };
+
+  export type Stream = {
+    path: string;
+    scope: AuthScope;
+    version: Version;
+    params: RouteParams[] | null;
+    headers: HeaderParams[] | null;
+    queries: QueryParams[] | null;
+    limits: NStreamService.StreamLimits | null;
+    handler: NAbstractHttpAdapter.StreamHandler;
   };
 
   export type Event = {
@@ -148,6 +160,7 @@ export namespace NSchemaService {
   export type Domain = {
     routes: Map<string, Route>;
     events: Map<string, Event>;
+    streams: Map<string, Stream>;
     helper: Map<string, AnyFn>;
     broker: Map<string, NRabbitMQConnector.Topic>;
     dictionaries: Map<string, ExtendedRecordObject>;

@@ -57,6 +57,9 @@ export class SchemaLoader implements ISchemaLoader {
         if (documents.broker) {
           this._setBroker(service.service, name, documents.broker);
         }
+        if (documents.streamer) {
+          this._setStreamer(name, documents.streamer);
+        }
         if (documents.helper) {
           this._setHelper(name, documents.helper);
         }
@@ -155,6 +158,53 @@ export class SchemaLoader implements ISchemaLoader {
           });
         }
       }
+    }
+  }
+
+  private _setStreamer(
+    domain: string,
+    structure: NSchemaLoader.StreamerStructure
+  ): void {
+    const storage = this._domains.get(domain);
+    if (!storage) {
+      this._setDomain(domain);
+      this._setStreamer(domain, structure);
+      return;
+    }
+
+    for (const path in structure) {
+      if (path.includes("/")) {
+        throw new Error(
+          'Endpoint name is not supported slash "/". Please use slag string path'
+        );
+      }
+
+      if (path.includes(".")) {
+        throw new Error(
+          "Endpoint name is not supported dots '.'. Please use slag string path"
+        );
+      }
+
+      const stream = structure[path];
+      const version = stream.version ?? "v1";
+      const name = `${version}.${path}`;
+
+      if (storage.streams.has(name)) {
+        throw new Error(
+          `Stream "${path}" with version "${version}" has been exists in domain "${domain}"`
+        );
+      }
+
+      storage.streams.set(name, {
+        path: path,
+        handler: stream.handler,
+        scope: stream.scope ?? "public:route",
+        params: stream.params ?? null,
+        headers: stream.headers ?? null,
+        queries: stream.queries ?? null,
+        limits: stream.limits ?? null,
+        version: version,
+      });
     }
   }
 
@@ -420,6 +470,7 @@ export class SchemaLoader implements ISchemaLoader {
       routes: new Map<string, NSchemaService.Route>(),
       events: new Map<string, NSchemaService.Event>(),
       broker: new Map<string, NRabbitMQConnector.Topic>(),
+      streams: new Map<string, NSchemaService.Stream>(),
       helper: new Map<string, AnyFn>(),
       dictionaries: new Map<string, ExtendedRecordObject>(),
       validator: new Map<string, NSchemaService.ValidatorHandler>(),

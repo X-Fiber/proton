@@ -63,13 +63,14 @@ export class DiscoveryService
     this._serverTag = undefined;
   }
 
-  public getOptional<T>(
-    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>
-  ): T | undefined {
+  public getOptional<K, T extends K | undefined = K | undefined>(
+    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, T>,
+    def: K
+  ): K {
     try {
-      return this._absDiscoveryService.getMandatory<T>(name);
+      return this._absDiscoveryService.getMandatory<K>(name);
     } catch {
-      return undefined;
+      return def;
     }
   }
 

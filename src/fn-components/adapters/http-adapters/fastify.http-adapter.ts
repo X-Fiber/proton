@@ -10,6 +10,7 @@ import {
   HttpMethod,
   ModeObject,
   UnknownObject,
+  Fastify,
   IContextService,
   IDiscoveryService,
   ILoggerService,
@@ -24,6 +25,7 @@ import {
   NSchemaService,
   ISchemeService,
   ISessionProvider,
+  NAbstractFileStorageStrategy,
 } from "~types";
 
 @injectable()
@@ -60,6 +62,7 @@ export class FastifyHttpAdapter
       port: 11000,
       urls: {
         api: "/v1/call/api",
+        stream: "/v1/call/stream",
       },
     };
   }
@@ -95,6 +98,10 @@ export class FastifyHttpAdapter
           "adapters.http.urls.api",
           this._config.urls.api
         ),
+        stream: this._discoveryService.getString(
+          "adapters.http.urls.stream",
+          this._config.urls.stream
+        ),
       },
     };
   }
@@ -106,6 +113,12 @@ export class FastifyHttpAdapter
       ignoreTrailingSlash: true,
       ignoreDuplicateSlashes: true,
     });
+    this._instance.register(require("@fastify/multipart"), {
+      limits: {
+        // fileSize: 50 * 1024 * 1024,
+      },
+    });
+
     const httpMethods = [
       "GET",
       "POST",
@@ -125,6 +138,16 @@ export class FastifyHttpAdapter
       method: httpMethods,
       handler: this._callApi,
       url: this._config.urls.api + "/:service/:domain/:version/:action/*",
+    });
+    this._instance.route({
+      method: "POST",
+      handler: this._callStream,
+      url: this._config.urls.stream + "/:service/:domain/:version/:stream",
+    });
+    this._instance.route({
+      method: "POST",
+      handler: this._callStream,
+      url: this._config.urls.stream + "/:service/:domain/:version/:stream/*",
     });
 
     // this._instance.addHook(
@@ -362,8 +385,6 @@ export class FastifyHttpAdapter
       queries = Helpers.parseQueryParams(Object.assign({}, req.query));
     }
 
-    const acceptLanguage = req.headers["accept-language"];
-
     const store: NContextService.RouteStore = {
       service: req.params.service,
       domain: req.params.domain,
@@ -374,7 +395,7 @@ export class FastifyHttpAdapter
       ip: req.ip,
       requestId: uuid.v4(),
       schema: this._schemaService.schema,
-      language: acceptLanguage,
+      language: req.headers["accept-language"],
     };
 
     try {
@@ -505,6 +526,217 @@ export class FastifyHttpAdapter
       }
     } finally {
       this._contextService.exit();
+    }
+  };
+
+  private _callStream = async (
+    req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
+    res: NAbstractHttpAdapter.AdapterResponse<"fastify">
+  ): Promise<void> => {
+    const service = this._schemaService.schema.get(req.params.service);
+    if (!service) {
+      return res
+        .status(StatusCode.BAD_REQUEST)
+        .send(
+          this._buildApiMessage(
+            "0001.0001",
+            `Service '${
+              req.params.service
+            }' not found. Supported services: ${Array.from(
+              this._schemaService.schema.keys()
+            )}`
+          )
+        );
+    }
+
+    const domain = service.get(req.params.domain);
+    if (!domain) {
+      return res
+        .status(StatusCode.BAD_REQUEST)
+        .send(
+          this._buildApiMessage(
+            "0001.0002",
+            `Domain '${req.params.domain}' not found in '${
+              req.params.service
+            }' service. Supported domains: ${Array.from(service.keys())}`
+          )
+        );
+    }
+
+    if (!domain.streams) {
+      return res.status(StatusCode.BAD_REQUEST).send({
+        responseType: ResponseType.FAIL,
+        data: {
+          message: "Domain does not have any streams",
+        },
+      });
+    }
+
+    const act = `${req.params.version}.${req.params.stream}`;
+
+    const stream = domain.streams.get(act);
+    if (!stream) {
+      return res
+        .status(StatusCode.BAD_REQUEST)
+        .send(
+          this._buildApiMessage(
+            "0001.0003",
+            `Action '${req.params.action}' in version '${
+              req.params.version
+            }' and with http method '${req.method.toUpperCase()}' not found in '${
+              req.params.domain
+            }' domain in '${req.params.service}' service.`
+          )
+        );
+    }
+
+    const store: NContextService.RouteStore = {
+      service: req.params.service,
+      domain: req.params.domain,
+      action: req.params.action,
+      version: req.params.version,
+      method: req.method,
+      path: req.url,
+      ip: req.ip,
+      requestId: uuid.v4(),
+      schema: this._schemaService.schema,
+      language: req.headers["accept-language"],
+    };
+
+    try {
+      await this._contextService.storage.run(store, async () => {
+        const context: NAbstractHttpAdapter.Context<
+          any,
+          any,
+          "private:system"
+        > = {
+          store: store,
+          user: {},
+          system: {},
+        };
+
+        const sessionProvider = container.get<ISessionProvider>(
+          CoreSymbols.SessionProvider
+        );
+
+        switch (stream.scope) {
+          case "public:route":
+            break;
+          case "private:user":
+            const accessToken = req.headers["x-user-access-token"];
+            if (!accessToken) {
+              return res.status(StatusCode.FORBIDDEN).send({
+                responseType: ResponseType.AUTHENTICATED,
+                data: {
+                  message: "Missed user access token",
+                },
+              });
+            }
+            const jwtPayload = await this._scramblerService.verifyToken<
+              UnknownObject & NScramblerService.SessionIdentifiers
+            >(accessToken);
+
+            context.user = {
+              userId: jwtPayload.payload.userId,
+              sessionId: jwtPayload.payload.sessionId,
+              ...(await sessionProvider.getById<any>(
+                jwtPayload.payload.sessionId
+              )),
+            };
+            break;
+          case "private:system":
+            const accessToken2 = req.headers["x-user-access-token"];
+            if (!accessToken2) {
+              return res.status(StatusCode.FORBIDDEN).send({
+                responseType: ResponseType.AUTHENTICATED,
+                data: {
+                  message: "Missed user access token",
+                },
+              });
+            }
+            const jwtPayload2 = await this._scramblerService.verifyToken<
+              UnknownObject & NScramblerService.SessionIdentifiers
+            >(accessToken2);
+
+            context.user = {
+              userId: jwtPayload2.payload.userId,
+              sessionId: jwtPayload2.payload.sessionId,
+              ...(await sessionProvider.getById<any>(
+                jwtPayload2.payload.sessionId
+              )),
+            };
+
+            break;
+        }
+
+        const files: NAbstractFileStorageStrategy.FileInfo[] = [];
+
+        let streams: AsyncGenerator<NAbstractFileStorageStrategy.StreamInfo>;
+        if (stream.limits) {
+          streams = req.files({ limits: stream.limits });
+        } else {
+          streams = req.files({ limits: { fileSize: 50 * 1024 * 1024 } });
+        }
+
+        for await (const streamInfo of streams) {
+          try {
+            const file: NAbstractFileStorageStrategy.FileInfo = {
+              streamId: uuid.v4(),
+              type: streamInfo.type,
+              fieldName: streamInfo.fieldname,
+              fileName: streamInfo.filename,
+              encoding: streamInfo.encoding,
+              mimetype: streamInfo.mimetype,
+              file: await streamInfo.toBuffer(),
+            };
+
+            files.push(file);
+          } catch (e: any) {
+            const error = e as Fastify.FastifyError;
+
+            const response: Record<string, unknown> = {
+              type: ResponseType.FAIL,
+              code: "0001.0002",
+              message: `Request file '${streamInfo.filename}' with mimetype '${streamInfo.mimetype}' too large.`,
+            };
+
+            if (stream.limits) {
+              response["limits"] = stream.limits;
+            }
+
+            return res.status(error.statusCode).send(response);
+          }
+        }
+
+        const result = await stream.handler(
+          {
+            method: req.method,
+            headers: {},
+            files: files,
+            params: {},
+            path: req.routeOptions.url,
+            url: req.url,
+            queries: {},
+          },
+          {
+            fnAgent: container.get<IFunctionalityAgent>(
+              CoreSymbols.FunctionalityAgent
+            ),
+            schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+            inAgent: container.get<IIntegrationAgent>(
+              CoreSymbols.IntegrationAgent
+            ),
+          },
+          context
+        );
+
+        if (!result) {
+          return res.status(StatusCode.NO_CONTENT).send();
+        }
+      });
+    } catch (e) {
+      console.log(e);
+      throw e;
     }
   };
 
