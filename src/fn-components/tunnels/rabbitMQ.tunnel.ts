@@ -3,11 +3,11 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 
 import type {
-  IContextService,
-  ICoreError,
   IExceptionProvider,
+  ILoggerService,
   IRabbitMQConnector,
   IRabbitMQTunnel,
+  NRabbitMQTunnel,
 } from "~types";
 
 @injectable()
@@ -15,33 +15,39 @@ export class RabbitMQTunnel implements IRabbitMQTunnel {
   constructor(
     @inject(CoreSymbols.RabbitMQConnector)
     private readonly _rabbitMQConnector: IRabbitMQConnector,
-    @inject(CoreSymbols.ContextService)
-    private readonly _contextService: IContextService
+    @inject(CoreSymbols.LoggerService)
+    private readonly _loggerService: ILoggerService
   ) {}
 
-  public sendToQueue(queue: string, data: any): void {
+  public sendToQueue(
+    queue: string,
+    data: any,
+    context?: NRabbitMQTunnel.Context
+  ): void {
     this._rabbitMQConnector.connection.createChannel((e, channel) => {
       if (e) {
-        throw this._callbackError(e);
+        this._loggerService.error(e, {
+          scope: "Core",
+          namespace: RabbitMQTunnel.name,
+          tag: "Execution",
+          errorType: "FAIL",
+          sessionId: context?.sessionId,
+          requestId: context?.requestId,
+        });
+
+        throw container
+          .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+          .throwError(e, {
+            namespace: RabbitMQTunnel.name,
+            tag: "EXECUTE",
+            errorType: "FATAL",
+            requestId: context?.requestId,
+            sessionId: context?.sessionId,
+          });
       }
 
-      // TODO: implement correct name
-      const name = `Test.test.v1.${queue}`;
-
-      channel.assertQueue(name, { durable: true });
-      channel.sendToQueue(name, Buffer.from(JSON.stringify(data)));
+      channel.assertQueue(queue, { durable: true });
+      channel.sendToQueue(queue, Buffer.from(JSON.stringify(data)));
     });
-  }
-
-  private _callbackError(e: any): ICoreError {
-    return container
-      .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-      .throwError(e, {
-        namespace: RabbitMQTunnel.name,
-        tag: "EXECUTE",
-        errorType: "FATAL",
-        requestId: this._contextService.store.requestId,
-        sessionId: this._contextService.store.sessionId,
-      });
   }
 }

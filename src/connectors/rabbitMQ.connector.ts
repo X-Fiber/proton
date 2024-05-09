@@ -270,18 +270,20 @@ export class RabbitMQConnector
       session: {},
     };
 
-    try {
-      await topic.handler(msg, agents, context);
-    } catch (e) {
-      throw container
-        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-        .throwError(e, {
-          tag: "Execution",
-          errorType: "FAIL",
-          namespace: RabbitMQConnector.name,
-          requestId: this._contextService.store.requestId,
-          sessionId: this._contextService.store.sessionId,
-        });
-    }
+    await this._contextService.storage.run(store, async () => {
+      try {
+        await topic.handler(msg, agents, context);
+      } catch (e) {
+        throw container
+          .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+          .throwError(e, {
+            tag: "Execution",
+            errorType: "FAIL",
+            namespace: RabbitMQConnector.name,
+            requestId: this._contextService.store.requestId,
+            sessionId: this._contextService.store.sessionId,
+          });
+      }
+    });
   }
 }

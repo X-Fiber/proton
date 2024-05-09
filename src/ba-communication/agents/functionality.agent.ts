@@ -25,6 +25,8 @@ import {
   ILoggerService,
   NLoggerService,
   IRabbitMQTunnel,
+  NRabbitMQConnector,
+  NRabbitMQTunnel,
 } from "~types";
 
 @injectable()
@@ -345,8 +347,17 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     const tunnel = container.get<IRabbitMQTunnel>(CoreSymbols.RabbitMQTunnel);
 
     return {
-      sendToQueue: (queue, data) => {
-        tunnel.sendToQueue(queue, data);
+      sendToQueue: <
+        P,
+        A extends NRabbitMQConnector.AuthScope = NRabbitMQConnector.AuthScope
+      >(
+        queue: string,
+        payload: NRabbitMQTunnel.QueuePayload<P, A>
+      ): void => {
+        const { store } = this._contextService;
+
+        const name = `${store.service}.${store.domain}.${store.version}.${queue}`;
+        tunnel.sendToQueue<P, A>(name, payload);
       },
     };
   }

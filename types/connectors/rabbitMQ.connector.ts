@@ -25,11 +25,11 @@ export namespace NRabbitMQConnector {
     | "vhost"
   >;
 
-  export type TopicKind = "queue" | "exchange";
+  export type AuthScope = "public" | "private";
 
-  export type Context = {
+  export type Context<T = any, A extends AuthScope = AuthScope> = {
     store: NContextService.TopicStore;
-    session: any;
+    session: A extends "private" ? T : A extends "public" ? undefined : never;
   };
 
   export type Handler = (
@@ -37,6 +37,8 @@ export namespace NRabbitMQConnector {
     agents: NSchemaService.Agents,
     context: Context
   ) => Promise<void>;
+
+  export type TopicKind = "queue" | "exchange";
 
   export interface BaseTopic {
     type: TopicKind;

@@ -3,9 +3,7 @@ import { IAbstractService } from "./abstract.service";
 import { NSchemaService } from "./schema.service";
 
 export interface IContextService extends IAbstractService {
-  readonly storage: AsyncHooks.AsyncLocalStorage<
-    NContextService.RouteStore | NContextService.EventStore
-  >;
+  readonly storage: AsyncHooks.AsyncLocalStorage<NContextService.Store>;
   readonly store: NContextService.Store;
   exit(callback?: () => void): void;
 }
