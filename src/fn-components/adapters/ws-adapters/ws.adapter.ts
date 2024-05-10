@@ -180,7 +180,7 @@ export class WsAdapter
       event = JSON.parse(data);
     } catch (e) {
       // TODO: resolve error
-      console.log(e);
+      console.error(e);
       throw e;
     }
 
@@ -269,7 +269,7 @@ export class WsAdapter
                 context
               );
             } catch (e) {
-              console.log(e);
+              console.error(e);
             }
           });
         } catch (e) {

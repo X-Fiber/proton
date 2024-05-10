@@ -283,6 +283,7 @@ export namespace NDiscoveryService {
         urls: {
           api: string;
           stream: string;
+          cache: string;
         };
       };
       ws: {

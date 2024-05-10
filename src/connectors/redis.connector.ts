@@ -9,6 +9,7 @@ import type {
   IRedisConnector,
   NRedisConnector,
 } from "~types";
+import { log } from "winston";
 
 @injectable()
 export class RedisConnector

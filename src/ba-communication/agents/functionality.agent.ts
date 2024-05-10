@@ -3,7 +3,7 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { Guards, Helpers } from "~utils";
 
-import type {
+import {
   AnyFn,
   Jwt,
   Nullable,
@@ -33,6 +33,8 @@ import type {
   ITaskScheduler,
   NAbstractFileStorageStrategy,
   IFileStorageFactory,
+  ICacheProvider,
+  NCacheProvider,
 } from "~types";
 
 @injectable()
@@ -443,6 +445,20 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       clear: (): Promise<void> => {
         return this._fileStorage.strategy.clear();
+      },
+    };
+  }
+
+  public get cache(): NFunctionalityAgent.Cache {
+    const tunnel = container.get<ICacheProvider>(CoreSymbols.CacheProvider);
+
+    return {
+      setItem: async <N extends string, T>(
+        name: N,
+        item: T,
+        ttl?: number
+      ): Promise<NCacheProvider.CacheIdentifier> => {
+        return tunnel.setItem<N, T>(name, item, ttl);
       },
     };
   }

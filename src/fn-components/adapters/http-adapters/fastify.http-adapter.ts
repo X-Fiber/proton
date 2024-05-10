@@ -6,26 +6,18 @@ import { ResponseType, SchemaHeaders, StatusCode } from "~common";
 
 import { AbstractHttpAdapter } from "./abstract.http-adapter";
 
-import {
-  HttpMethod,
+import type {
   ModeObject,
-  UnknownObject,
   Fastify,
   IContextService,
   IDiscoveryService,
   ILoggerService,
   IAbstractHttpAdapter,
   NAbstractHttpAdapter,
-  IFunctionalityAgent,
-  NContextService,
-  ISchemaAgent,
   IScramblerService,
-  NScramblerService,
-  IIntegrationAgent,
-  NSchemaService,
   ISchemeService,
-  ISessionProvider,
   NAbstractFileStorageStrategy,
+  IRedisTunnel,
 } from "~types";
 
 @injectable()
@@ -39,6 +31,8 @@ export class FastifyHttpAdapter
     | NAbstractHttpAdapter.AdapterInstance<"fastify">
     | undefined;
 
+  protected readonly _httpMethods: string[];
+
   constructor(
     @inject(CoreSymbols.DiscoveryService)
     protected readonly _discoveryService: IDiscoveryService,
@@ -46,10 +40,10 @@ export class FastifyHttpAdapter
     protected readonly _loggerService: ILoggerService,
     @inject(CoreSymbols.ContextService)
     protected readonly _contextService: IContextService,
-    @inject(CoreSymbols.ScramblerService)
-    private readonly _scramblerService: IScramblerService,
     @inject(CoreSymbols.SchemeService)
-    private readonly _schemaService: ISchemeService
+    protected readonly _schemaService: ISchemeService,
+    @inject(CoreSymbols.ScramblerService)
+    protected readonly _scramblerService: IScramblerService
   ) {
     super();
 
@@ -63,8 +57,20 @@ export class FastifyHttpAdapter
       urls: {
         api: "/v1/call/api",
         stream: "/v1/call/stream",
+        cache: "/v1/call/cache",
       },
     };
+
+    this._httpMethods = [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+      "HEAD",
+      "TRACE",
+    ];
   }
 
   protected _setConfig(): void {
@@ -102,6 +108,10 @@ export class FastifyHttpAdapter
           "adapters.http.urls.stream",
           this._config.urls.stream
         ),
+        cache: this._discoveryService.getString(
+          "adapters.http.urls.cache",
+          this._config.urls.cache
+        ),
       },
     };
   }
@@ -119,54 +129,25 @@ export class FastifyHttpAdapter
       },
     });
 
-    const httpMethods = [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-      "HEAD",
-      "TRACE",
-    ];
-    this._instance.route({
-      method: httpMethods,
-      handler: this._callApi,
-      url: this._config.urls.api + "/:service/:domain/:version/:action",
-    });
-    this._instance.route({
-      method: httpMethods,
-      handler: this._callApi,
-      url: this._config.urls.api + "/:service/:domain/:version/:action/*",
-    });
-    this._instance.route({
-      method: "POST",
-      handler: this._callStream,
-      url: this._config.urls.stream + "/:service/:domain/:version/:stream",
-    });
-    this._instance.route({
-      method: "POST",
-      handler: this._callStream,
-      url: this._config.urls.stream + "/:service/:domain/:version/:stream/*",
-    });
+    this._instance.addHook(
+      "onRequest",
+      (
+        request: Fastify.Request,
+        reply: Fastify.Response,
+        done: () => void
+      ): void => {
+        reply.headers(this._corsHeaders());
 
-    // this._instance.addHook(
-    //   "onRequest",
-    //   (
-    //     request: Fastify.Request,
-    //     reply: Fastify.Response,
-    //     done: () => void
-    //   ): void => {
-    //     reply.headers(this._corsHeaders());
-    //
-    //     if (request.method === "OPTIONS") {
-    //       reply.status(200).send();
-    //       return;
-    //     }
-    //
-    //     done();
-    //   }
-    // );
+        if (request.method === "OPTIONS") {
+          reply.status(200).send();
+          return;
+        }
+
+        done();
+      }
+    );
+
+    this._setRoutes();
 
     const { protocol, host, port } = this._config;
 
@@ -186,17 +167,35 @@ export class FastifyHttpAdapter
     }
   }
 
+  private _setRoutes(): void {
+    this._instance.route({
+      method: this._httpMethods,
+      handler: this._callApi,
+      url: this._config.urls.api + "/:service/:domain/:version/:action",
+    });
+    this._instance.route({
+      method: this._httpMethods,
+      handler: this._callApi,
+      url: this._config.urls.api + "/:service/:domain/:version/:action/*",
+    });
+    this._instance.route({
+      method: "POST",
+      handler: this._callStream,
+      url: this._config.urls.stream + "/:service/:domain/:version/:stream",
+    });
+    this._instance.route({
+      method: "POST",
+      handler: this._callStream,
+      url: this._config.urls.stream + "/:service/:domain/:version/:stream/*",
+    });
+    this._instance.route({
+      method: "PATCH",
+      handler: this._callCache,
+      url: this._config.urls.cache + "/:name",
+    });
+  }
+
   private _corsHeaders() {
-    const httpMethods: HttpMethod[] = [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "HEAD",
-      "OPTIONS",
-      "TRACE",
-    ];
     const standardHeaders = ["Content-Type", "Authorization"];
     const schemaHeaders: (typeof SchemaHeaders)[keyof typeof SchemaHeaders][] =
       [
@@ -209,7 +208,7 @@ export class FastifyHttpAdapter
     const tokenHeaders = ["x-user-access-token", "x-user-refresh-token"];
     return {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": httpMethods.join(", "),
+      "Access-Control-Allow-Methods": this._httpMethods.join(", "),
       "Access-Control-Allow-Headers":
         standardHeaders.join(", ") +
         ", " +
@@ -221,10 +220,10 @@ export class FastifyHttpAdapter
   }
 
   public async stop(): Promise<void> {
-    if (!this._instance) return;
-
-    await this._instance.close();
-    this._instance = undefined;
+    if (this._instance) {
+      await this._instance.close();
+      this._instance = undefined;
+    }
 
     this._loggerService.system(`Http server has been stopped.`, {
       scope: "Core",
@@ -237,37 +236,16 @@ export class FastifyHttpAdapter
     req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
     res: NAbstractHttpAdapter.AdapterResponse<"fastify">
   ): Promise<void> => {
-    const service = this._schemaService.schema.get(req.params.service);
-    if (!service) {
-      return res
-        .status(StatusCode.BAD_REQUEST)
-        .send(
-          this._buildApiMessage(
-            "0001.0001",
-            `Service '${
-              req.params.service
-            }' not found. Supported services: ${Array.from(
-              this._schemaService.schema.keys()
-            )}`
-          )
-        );
+    const domain = this._getDomainStorage(
+      req.params.service,
+      req.params.domain
+    );
+
+    if (domain.type === "fail") {
+      return res.status(StatusCode.BAD_REQUEST).send(domain.message);
     }
 
-    const domain = service.get(req.params.domain);
-    if (!domain) {
-      return res
-        .status(StatusCode.BAD_REQUEST)
-        .send(
-          this._buildApiMessage(
-            "0001.0002",
-            `Domain '${req.params.domain}' not found in '${
-              req.params.service
-            }' service. Supported domains: ${Array.from(service.keys())}`
-          )
-        );
-    }
-
-    if (!domain.routes) {
+    if (!domain.domain.routes) {
       return res.status(StatusCode.BAD_REQUEST).send({
         responseType: ResponseType.FAIL,
         data: {
@@ -280,7 +258,7 @@ export class FastifyHttpAdapter
       req.params.action
     }.${req.method.toUpperCase()}`;
 
-    const action = domain.routes.get(act);
+    const action = domain.domain.routes.get(act);
     if (!action) {
       return res
         .status(StatusCode.BAD_REQUEST)
@@ -296,174 +274,18 @@ export class FastifyHttpAdapter
         );
     }
 
-    let headers: Record<string, string | null> = {};
-    if (action.headers && action.headers.length > 0) {
-      headers = action.headers.reduce(
-        (
-          acc: { [key: string]: string | null },
-          header: NSchemaService.HeaderParams
-        ) => {
-          const h: string | null = req.headers[header.name];
-          switch (header.scope) {
-            case "required":
-              if (!h) {
-                return res
-                  .status(StatusCode.BAD_REQUEST)
-                  .send(
-                    this._buildApiMessage(
-                      "0001.0004",
-                      `Header '${header.name}' is required`
-                    )
-                  );
-              }
-              acc[header.name] = h;
-              break;
-            case "optional":
-              acc[header.name] = h ?? null;
-              break;
-            default:
-              throw Helpers.switchChecker(header.scope);
-          }
-          return acc;
-        },
-        {}
-      );
-    }
-
-    let params: Record<string, string | null> = {};
-    const dynamicParams = req.params["*"];
-    if (
-      action.params &&
-      action.params.length > 0 &&
-      dynamicParams &&
-      dynamicParams.length > 0
-    ) {
-      const dynamic: string[] = dynamicParams.split("/");
-
-      const obj: Record<
-        string,
-        { scope: "required" | "optional"; value: string }
-      > = {};
-      action.params.forEach(
-        (p, i) => (obj[p.name] = { scope: p.scope, value: dynamic[i] })
-      );
-
-      params = action.params.reduce(
-        (
-          acc: Record<string, string | null>,
-          param: NSchemaService.RouteParams
-        ) => {
-          const parameter = obj[param.name];
-          switch (parameter.scope) {
-            case "required":
-              if (!parameter.value) {
-                return res
-                  .status(StatusCode.BAD_REQUEST)
-                  .send(
-                    this._buildApiMessage(
-                      "0001.0004",
-                      `Header '${param.name}' is required`
-                    )
-                  );
-              } else {
-                acc[param.name] = parameter.value;
-              }
-              break;
-            case "optional":
-              acc[param.name] = parameter.value ?? null;
-              break;
-          }
-          return acc;
-        },
-        {}
-      );
-    }
-
     // TODO: resolve query params
     let queries: ModeObject = {};
     if (req.query) {
       queries = Helpers.parseQueryParams(Object.assign({}, req.query));
     }
 
-    const store: NContextService.RouteStore = {
-      service: req.params.service,
-      domain: req.params.domain,
-      action: req.params.action,
-      version: req.params.version,
-      method: req.method,
-      path: req.url,
-      ip: req.ip,
-      requestId: uuid.v4(),
-      schema: this._schemaService.schema,
-      language: req.headers["accept-language"],
-    };
+    const store = this._formedStore(req);
+    const headers = this._getHeaders(req.headers, action.headers, res);
+    const params = this._getParams(req.params, action.params, res);
 
     try {
       await this._contextService.storage.run(store, async () => {
-        const context: NAbstractHttpAdapter.Context<
-          any,
-          any,
-          "private:system"
-        > = {
-          store: store,
-          user: {},
-          system: {},
-        };
-
-        const sessionProvider = container.get<ISessionProvider>(
-          CoreSymbols.SessionProvider
-        );
-
-        switch (action.scope) {
-          case "public:route":
-            break;
-          case "private:user":
-            const accessToken = req.headers["x-user-access-token"];
-            if (!accessToken) {
-              return res.status(StatusCode.FORBIDDEN).send({
-                responseType: ResponseType.AUTHENTICATED,
-                data: {
-                  message: "Missed user access token",
-                },
-              });
-            }
-            const jwtPayload = await this._scramblerService.verifyToken<
-              UnknownObject & NScramblerService.SessionIdentifiers
-            >(accessToken);
-
-            context.user = {
-              userId: jwtPayload.payload.userId,
-              sessionId: jwtPayload.payload.sessionId,
-              ...(await sessionProvider.getById<any>(
-                jwtPayload.payload.sessionId
-              )),
-            };
-            break;
-          case "private:system":
-            const accessToken2 = req.headers["x-user-access-token"];
-            if (!accessToken2) {
-              return res.status(StatusCode.FORBIDDEN).send({
-                responseType: ResponseType.AUTHENTICATED,
-                data: {
-                  message: "Missed user access token",
-                },
-              });
-            }
-            const jwtPayload2 = await this._scramblerService.verifyToken<
-              UnknownObject & NScramblerService.SessionIdentifiers
-            >(accessToken2);
-
-            context.user = {
-              userId: jwtPayload2.payload.userId,
-              sessionId: jwtPayload2.payload.sessionId,
-              ...(await sessionProvider.getById<any>(
-                jwtPayload2.payload.sessionId
-              )),
-            };
-
-            break;
-        }
-
         const result = await action.handler(
           {
             method: req.method,
@@ -474,43 +296,31 @@ export class FastifyHttpAdapter
             url: req.url,
             queries: queries,
           },
-          {
-            fnAgent: container.get<IFunctionalityAgent>(
-              CoreSymbols.FunctionalityAgent
-            ),
-            schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
-            inAgent: container.get<IIntegrationAgent>(
-              CoreSymbols.IntegrationAgent
-            ),
-          },
-          context
+          this._getAgents(),
+          await this._getContext(store, action.scope, req, res)
         );
 
         if (!result) {
           return res.status(StatusCode.NO_CONTENT).send();
         }
 
-        //   if (result.payload.headers) res.headers(result.payload.headers);
-        //
-        //   if (Guards.isJsonResponse(result.payload) && result.format === "json") {
-        //     return res
-        //       .status(result.payload.statusCode || StatusCode.SUCCESS)
-        //       .send({
-        //         type: result.payload.type,
-        //         data: result.payload.data,
-        //       });
-        //   } else if (
-        //     Guards.isRedirectResponse(result.payload) &&
-        //     result.format === "redirect"
-        //   ) {
-        //     return res
-        //       .status(result.payload.statusCode || StatusCode.FOUND)
-        //       .redirect(result.payload.url);
-        //   } else {
-        //     return res
-        //       .status(result.payload.statusCode || StatusCode.NO_CONTENT)
-        //       .send();
-        //   }
+        if (result.headers) res.headers(result.headers);
+
+        switch (result.format) {
+          case "json":
+            return res.status(result.statusCode || StatusCode.SUCCESS).send({
+              type: result.type,
+              data: result.data,
+            });
+          case "redirect":
+            return res
+              .status(result.statusCode || StatusCode.FOUND)
+              .redirect(result.url);
+          case "status":
+            return res
+              .status(result.statusCode || StatusCode.NO_CONTENT)
+              .send();
+        }
       });
     } catch (e) {
       console.error(e);
@@ -533,37 +343,16 @@ export class FastifyHttpAdapter
     req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
     res: NAbstractHttpAdapter.AdapterResponse<"fastify">
   ): Promise<void> => {
-    const service = this._schemaService.schema.get(req.params.service);
-    if (!service) {
-      return res
-        .status(StatusCode.BAD_REQUEST)
-        .send(
-          this._buildApiMessage(
-            "0001.0001",
-            `Service '${
-              req.params.service
-            }' not found. Supported services: ${Array.from(
-              this._schemaService.schema.keys()
-            )}`
-          )
-        );
+    const domain = this._getDomainStorage(
+      req.params.service,
+      req.params.domain
+    );
+
+    if (domain.type === "fail") {
+      return res.status(StatusCode.BAD_REQUEST).send(domain.message);
     }
 
-    const domain = service.get(req.params.domain);
-    if (!domain) {
-      return res
-        .status(StatusCode.BAD_REQUEST)
-        .send(
-          this._buildApiMessage(
-            "0001.0002",
-            `Domain '${req.params.domain}' not found in '${
-              req.params.service
-            }' service. Supported domains: ${Array.from(service.keys())}`
-          )
-        );
-    }
-
-    if (!domain.streams) {
+    if (!domain.domain.streams) {
       return res.status(StatusCode.BAD_REQUEST).send({
         responseType: ResponseType.FAIL,
         data: {
@@ -574,7 +363,7 @@ export class FastifyHttpAdapter
 
     const act = `${req.params.version}.${req.params.stream}`;
 
-    const stream = domain.streams.get(act);
+    const stream = domain.domain.streams.get(act);
     if (!stream) {
       return res
         .status(StatusCode.BAD_REQUEST)
@@ -590,98 +379,22 @@ export class FastifyHttpAdapter
         );
     }
 
-    const store: NContextService.RouteStore = {
-      service: req.params.service,
-      domain: req.params.domain,
-      action: req.params.action,
-      version: req.params.version,
-      method: req.method,
-      path: req.url,
-      ip: req.ip,
-      requestId: uuid.v4(),
-      schema: this._schemaService.schema,
-      language: req.headers["accept-language"],
-    };
+    const store = this._formedStore(req);
+
+    const files: NAbstractFileStorageStrategy.FilesInfo = new Map();
+
+    let streams: AsyncGenerator<NAbstractFileStorageStrategy.StreamInfo>;
+    if (stream.limits) {
+      streams = req.files({ limits: stream.limits });
+    } else {
+      streams = req.files({ limits: { fileSize: 50 * 1024 * 1024 } });
+    }
 
     try {
       await this._contextService.storage.run(store, async () => {
-        const context: NAbstractHttpAdapter.Context<
-          any,
-          any,
-          "private:system"
-        > = {
-          store: store,
-          user: {},
-          system: {},
-        };
-
-        const sessionProvider = container.get<ISessionProvider>(
-          CoreSymbols.SessionProvider
-        );
-
-        switch (stream.scope) {
-          case "public:route":
-            break;
-          case "private:user":
-            const accessToken = req.headers["x-user-access-token"];
-            if (!accessToken) {
-              return res.status(StatusCode.FORBIDDEN).send({
-                responseType: ResponseType.AUTHENTICATED,
-                data: {
-                  message: "Missed user access token",
-                },
-              });
-            }
-            const jwtPayload = await this._scramblerService.verifyToken<
-              UnknownObject & NScramblerService.SessionIdentifiers
-            >(accessToken);
-
-            context.user = {
-              userId: jwtPayload.payload.userId,
-              sessionId: jwtPayload.payload.sessionId,
-              ...(await sessionProvider.getById<any>(
-                jwtPayload.payload.sessionId
-              )),
-            };
-            break;
-          case "private:system":
-            const accessToken2 = req.headers["x-user-access-token"];
-            if (!accessToken2) {
-              return res.status(StatusCode.FORBIDDEN).send({
-                responseType: ResponseType.AUTHENTICATED,
-                data: {
-                  message: "Missed user access token",
-                },
-              });
-            }
-            const jwtPayload2 = await this._scramblerService.verifyToken<
-              UnknownObject & NScramblerService.SessionIdentifiers
-            >(accessToken2);
-
-            context.user = {
-              userId: jwtPayload2.payload.userId,
-              sessionId: jwtPayload2.payload.sessionId,
-              ...(await sessionProvider.getById<any>(
-                jwtPayload2.payload.sessionId
-              )),
-            };
-
-            break;
-        }
-
-        const files: NAbstractFileStorageStrategy.FileInfo[] = [];
-
-        let streams: AsyncGenerator<NAbstractFileStorageStrategy.StreamInfo>;
-        if (stream.limits) {
-          streams = req.files({ limits: stream.limits });
-        } else {
-          streams = req.files({ limits: { fileSize: 50 * 1024 * 1024 } });
-        }
-
         for await (const streamInfo of streams) {
           try {
             const file: NAbstractFileStorageStrategy.FileInfo = {
-              streamId: uuid.v4(),
               type: streamInfo.type,
               fieldName: streamInfo.fieldname,
               fileName: streamInfo.filename,
@@ -690,7 +403,7 @@ export class FastifyHttpAdapter
               file: await streamInfo.toBuffer(),
             };
 
-            files.push(file);
+            files.set(uuid.v4(), file);
           } catch (e: any) {
             const error = e as Fastify.FastifyError;
 
@@ -708,39 +421,88 @@ export class FastifyHttpAdapter
           }
         }
 
+        const headers = this._getHeaders(req.headers, stream.headers, res);
+        const params = this._getParams(req.params, stream.params, res);
+
         const result = await stream.handler(
           {
             method: req.method,
-            headers: {},
+            headers: headers,
             files: files,
-            params: {},
+            params: params,
             path: req.routeOptions.url,
             url: req.url,
             queries: {},
           },
-          {
-            fnAgent: container.get<IFunctionalityAgent>(
-              CoreSymbols.FunctionalityAgent
-            ),
-            schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
-            inAgent: container.get<IIntegrationAgent>(
-              CoreSymbols.IntegrationAgent
-            ),
-          },
-          context
+          this._getAgents(),
+          await this._getContext(store, stream.scope, req, res)
         );
 
         if (!result) {
           return res.status(StatusCode.NO_CONTENT).send();
         }
+
+        if (result.headers) res.headers(result.headers);
+
+        switch (result.format) {
+          case "json":
+            return res.status(result.statusCode || StatusCode.SUCCESS).send({
+              type: result.type,
+              data: result.data,
+            });
+          case "redirect":
+            return res
+              .status(result.statusCode || StatusCode.FOUND)
+              .redirect(result.url);
+          case "status":
+            return res
+              .status(result.statusCode || StatusCode.NO_CONTENT)
+              .send();
+        }
       });
     } catch (e) {
-      console.log(e);
+      console.error(e);
       throw e;
+    } finally {
+      this._contextService.exit();
     }
   };
 
-  private _buildApiMessage(code: string, message: string) {
-    return { type: "FAIL", code, message };
-  }
+  private _callCache = async (
+    req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
+    res: NAbstractHttpAdapter.AdapterResponse<"fastify">
+  ): Promise<void> => {
+    const name = req.params.name;
+    const tag = req.headers["etag"];
+
+    if (tag) {
+      return res.status(StatusCode.BAD_REQUEST).send({
+        type: "fail",
+        code: "0001.0001",
+        message: "Etag header is required.",
+      });
+    }
+
+    try {
+      const validCache = await container
+        .get<IRedisTunnel>(CoreSymbols.RedisTunnel)
+        .keys.checkOne(`cache:${name}:${tag}`);
+
+      return res
+        .status(validCache ? StatusCode.SUCCESS : StatusCode.BAD_REQUEST)
+        .send({ valid: validCache });
+    } catch (e) {
+      this._loggerService.error(e, {
+        namespace: FastifyHttpAdapter.name,
+        tag: "Execution",
+        scope: "Core",
+        errorType: "FATAL",
+      });
+      return res.status(StatusCode.SERVER_ERROR).send({
+        type: "fatal",
+        code: "0001.0001",
+        message: "Internal server error.",
+      });
+    }
+  };
 }

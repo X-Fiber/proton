@@ -1,5 +1,6 @@
 import type {
   IAbstractWsAdapter,
+  ICacheProvider,
   IDiscoveryService,
   IExceptionProvider,
   IFileStorageFactory,
@@ -26,6 +27,7 @@ export interface IFunctionalityAgent {
   readonly fileStorage: NFunctionalityAgent.FileStorage;
   readonly ws: NFunctionalityAgent.Ws;
   readonly broker: NFunctionalityAgent.Broker;
+  readonly cache: NFunctionalityAgent.Cache;
 }
 
 export namespace NFunctionalityAgent {
@@ -130,4 +132,8 @@ export namespace NFunctionalityAgent {
   };
 
   export type FileStorage = IFileStorageFactory["strategy"];
+
+  export type Cache = {
+    setItem: ICacheProvider["setItem"];
+  };
 }

@@ -25,6 +25,7 @@ export const CoreSymbols = {
   LocalizationProvider: Symbol("LocalizationProvider"),
   PermissionProvider: Symbol("PermissionProvider"),
   SessionProvider: Symbol("SessionProvider"),
+  CacheProvider: Symbol("CacheProvider"),
 
   // Tunnels
   MongoTunnel: Symbol("MongoTunnel"),
@@ -54,4 +55,5 @@ export const CoreSymbols = {
 
   // Strategies
   BufferFileStorageStrategy: Symbol("BufferFileStorageStrategy"),
+  RedisFileStorageStrategy: Symbol("RedisFileStorageStrategy"),
 } as const;

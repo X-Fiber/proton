@@ -7,6 +7,7 @@ import {
   NStreamService,
 } from "../services";
 import { AuthScope } from "../services/schema.service";
+import { NAbstractFileStorageStrategy } from "../strategies";
 
 export interface IAbstractHttpAdapter {
   start(): Promise<void>;
@@ -14,6 +15,24 @@ export interface IAbstractHttpAdapter {
 }
 
 export namespace NAbstractHttpAdapter {
+  export type ValidateMessage = {
+    type: "FAIL";
+    code: string;
+    message: string;
+  };
+
+  type StorageSuccess = {
+    type: "success";
+    domain: NSchemaService.Domain;
+  };
+
+  type StorageFail = {
+    type: "fail";
+    message: NAbstractHttpAdapter.ValidateMessage;
+  };
+
+  type StorageResult = StorageSuccess | StorageFail;
+
   export type AdapterKind = "express" | "fastify";
 
   export type AdapterInstance<K extends AdapterKind> = K extends "express"
@@ -62,7 +81,7 @@ export namespace NAbstractHttpAdapter {
   > = {
     url: string;
     path: string;
-    files: NStreamService.FileInfo[];
+    files: Map<string, NAbstractFileStorageStrategy.FileInfo>;
     headers: H;
     params: P;
     queries: Q;
@@ -116,11 +135,11 @@ export namespace NAbstractHttpAdapter {
     request: ApiRequest<any, any, any, any>,
     agents: NSchemaService.Agents,
     context: Context
-  ) => Promise<Response | void>;
+  ) => Promise<Response<any, any, any> | void>;
 
   export type StreamHandler = (
     request: StreamRequest<any, any, any, any>,
     agents: NSchemaService.Agents,
     context: Context
-  ) => Promise<Response | void>;
+  ) => Promise<Response<any, any, any> | void>;
 }
