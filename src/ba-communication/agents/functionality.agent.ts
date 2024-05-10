@@ -31,6 +31,8 @@ import type {
   NTaskScheduler,
   ITaskService,
   ITaskScheduler,
+  NAbstractFileStorageStrategy,
+  IFileStorageFactory,
 } from "~types";
 
 @injectable()
@@ -47,7 +49,9 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     @inject(CoreSymbols.TaskService)
     private readonly _taskService: ITaskService,
     @inject(CoreSymbols.WsAdapter)
-    private readonly _wsAdapter: IAbstractWsAdapter
+    private readonly _wsAdapter: IAbstractWsAdapter,
+    @inject(CoreSymbols.FileStorageFactory)
+    private readonly _fileStorage: IFileStorageFactory
   ) {}
 
   public get discovery(): NFunctionalityAgent.Discovery {
@@ -393,6 +397,52 @@ export class FunctionalityAgent implements IFunctionalityAgent {
 
         const name = `${store.service}.${store.domain}.${store.version}.${queue}`;
         tunnel.sendToQueue<P, A>(name, payload);
+      },
+    };
+  }
+
+  public get fileStorage(): NFunctionalityAgent.FileStorage {
+    return {
+      count: (): Promise<number> => {
+        return this._fileStorage.strategy.count();
+      },
+      setOne: <N extends string>(
+        name: N,
+        files: NAbstractFileStorageStrategy.FileInfo
+      ) => {
+        return this._fileStorage.strategy.setOne<N>(name, files);
+      },
+      setMany: (files: NAbstractFileStorageStrategy.FilesInfo) => {
+        return this._fileStorage.strategy.setMany(files);
+      },
+      getOne: <N extends string>(
+        name: N
+      ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
+        return this._fileStorage.strategy.getOne<N>(name);
+      },
+      getAll: (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+        return this._fileStorage.strategy.getAll();
+      },
+      updateOne: <N extends string>(
+        name: N,
+        file: NAbstractFileStorageStrategy.FileInfo
+      ): Promise<void> => {
+        return this._fileStorage.strategy.updateOne<N>(name, file);
+      },
+      loadOne: <N extends string>(
+        name: N
+      ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
+        return this._fileStorage.strategy.loadOne<N>(name);
+      },
+      loadAll:
+        async (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+          return this._fileStorage.strategy.loadAll();
+        },
+      removeOne: <N extends string>(name: N): Promise<void> => {
+        return this._fileStorage.strategy.removeOne<N>(name);
+      },
+      clear: (): Promise<void> => {
+        return this._fileStorage.strategy.clear();
       },
     };
   }

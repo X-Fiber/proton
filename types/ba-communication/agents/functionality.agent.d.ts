@@ -2,6 +2,7 @@ import type {
   IAbstractWsAdapter,
   IDiscoveryService,
   IExceptionProvider,
+  IFileStorageFactory,
   ILoggerService,
   IPermissionProvider,
   IRabbitMQTunnel,
@@ -22,6 +23,7 @@ export interface IFunctionalityAgent {
   readonly exception: NFunctionalityAgent.Exception;
   readonly permissions: NFunctionalityAgent.Permissions;
   readonly scheduler: NFunctionalityAgent.Scheduler;
+  readonly fileStorage: NFunctionalityAgent.FileStorage;
   readonly ws: NFunctionalityAgent.Ws;
   readonly broker: NFunctionalityAgent.Broker;
 }
@@ -126,4 +128,6 @@ export namespace NFunctionalityAgent {
     set: ITaskService["set"];
     delete: ITaskService["delete"];
   };
+
+  export type FileStorage = IFileStorageFactory["strategy"];
 }

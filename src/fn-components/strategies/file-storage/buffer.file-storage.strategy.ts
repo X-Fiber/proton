@@ -111,10 +111,65 @@ export class BufferFileStorageStrategy
     return this._BUFFER_STORAGE;
   }
 
-  public async set<N extends string>(
+  public async count(): Promise<number> {
+    return Array.from(this._bufferStorage.keys()).length;
+  }
+
+  public async setOne<N extends string>(
     name: N,
     files: NAbstractFileStorageStrategy.FileInfo
   ): Promise<void> {
     this._bufferStorage.set(name, files);
+  }
+
+  public async setMany(
+    structures: NAbstractFileStorageStrategy.FilesInfo
+  ): Promise<void> {
+    structures.forEach((s) => this._bufferStorage.set(s.name, s.file));
+  }
+
+  public async getOne<N extends string>(
+    name: N
+  ): Promise<NAbstractFileStorageStrategy.FileInfo | null> {
+    const file = this._bufferStorage.get(name);
+    return file ?? null;
+  }
+
+  public async getAll(): Promise<NAbstractFileStorageStrategy.FilesInfo | null> {
+    const filesArray = Array.from(this._bufferStorage);
+    const files = filesArray.map(([name, file]) => ({ name, file }));
+    return files.length > 0 ? files : null;
+  }
+
+  public async updateOne<N extends string>(
+    name: N,
+    file: NAbstractFileStorageStrategy.FileInfo
+  ): Promise<void> {
+    this._bufferStorage.delete(name);
+    this._bufferStorage.set(name, file);
+  }
+
+  public async loadOne<N extends string>(
+    name: N
+  ): Promise<NAbstractFileStorageStrategy.FileInfo | null> {
+    const file = this._bufferStorage.get(name);
+    this._bufferStorage.delete(name);
+    return file ?? null;
+  }
+
+  public async loadAll(): Promise<NAbstractFileStorageStrategy.FilesInfo | null> {
+    const filesArray = Array.from(this._bufferStorage);
+    const files = filesArray.map(([name, file]) => ({ name, file }));
+    this._bufferStorage.clear();
+
+    return files.length > 0 ? files : null;
+  }
+
+  public async removeOne<N extends string>(name: N): Promise<void> {
+    this._bufferStorage.delete(name);
+  }
+
+  public async clear(): Promise<void> {
+    this._bufferStorage.clear();
   }
 }

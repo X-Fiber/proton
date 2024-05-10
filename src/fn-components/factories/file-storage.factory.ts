@@ -4,11 +4,12 @@ import { Helpers } from "~utils";
 
 import { AbstractFactory } from "./abstract.factory";
 
-import {
-  IAbstractFileStorageStrategy,
+import type {
+  ILoggerService,
   IDiscoveryService,
   IFileStorageFactory,
-  ILoggerService,
+  NFileStorageFactory,
+  IAbstractFileStorageStrategy,
   NAbstractFileStorageStrategy,
 } from "~types";
 
@@ -22,7 +23,7 @@ export class FileStorageFactory
   protected readonly _CONF_VARIABLE_ENABLE = "strategies.fileStorage.enable";
   protected readonly _DEF_CONF_VARIABLE = "buffer";
 
-  protected _strategy: IAbstractFileStorageStrategy | undefined;
+  protected _STRATEGY: IAbstractFileStorageStrategy | undefined;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
@@ -36,26 +37,24 @@ export class FileStorageFactory
   }
 
   public async start(): Promise<void> {
-    const kind = this._getKind<"buffer" | "file" | "s3">();
+    const kind = this._getKind<"buffer" | "redis">();
     switch (kind) {
       case "buffer":
         try {
           await this._bufferStrategy.start();
-          this._strategy = this._bufferStrategy;
+          this._STRATEGY = this._bufferStrategy;
         } catch (e) {
           console.error(e);
         }
         break;
-      case "file":
-      case "s3":
-        throw new Error("Strategy not implemented");
+      case "redis":
       default:
         throw Helpers.switchChecker(kind);
     }
   }
 
   public async stop(): Promise<void> {
-    const kind = this._getKind<"buffer" | "file" | "s3">();
+    const kind = this._getKind<"buffer" | "redis">();
 
     switch (kind) {
       case "buffer":
@@ -65,22 +64,66 @@ export class FileStorageFactory
           console.error(e);
         }
         break;
-      case "file":
-      case "s3":
-        throw new Error("Strategy not implemented");
+      case "redis":
       default:
         throw Helpers.switchChecker(kind);
     }
 
-    if (this._strategy) {
-      this._strategy = undefined;
+    if (this._STRATEGY) {
+      this._STRATEGY = undefined;
     }
   }
 
-  public async set<N extends string>(
-    name: N,
-    files: NAbstractFileStorageStrategy.FileInfo
-  ): Promise<void> {
-    this._strategy?.set(name, files);
+  private get _strategy(): IAbstractFileStorageStrategy {
+    if (!this._STRATEGY) {
+      throw new Error("Strategy not implemented.");
+    }
+    return this._STRATEGY;
+  }
+
+  public get strategy(): NFileStorageFactory.Strategy {
+    return {
+      count: (): Promise<number> => {
+        return this._strategy.count();
+      },
+      setOne: <N extends string>(
+        name: N,
+        files: NAbstractFileStorageStrategy.FileInfo
+      ) => {
+        return this._strategy.setOne<N>(name, files);
+      },
+      setMany: (files: NAbstractFileStorageStrategy.FilesInfo) => {
+        return this._strategy.setMany(files);
+      },
+      getOne: <N extends string>(
+        name: N
+      ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
+        return this._strategy.getOne<N>(name);
+      },
+      getMany: (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+        return this._strategy.getAll();
+      },
+      updateOne: <N extends string>(
+        name: N,
+        file: NAbstractFileStorageStrategy.FileInfo
+      ): Promise<void> => {
+        return this._strategy.updateOne<N>(name, file);
+      },
+      loadOne: <N extends string>(
+        name: N
+      ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
+        return this._strategy.loadOne<N>(name);
+      },
+      loadMany:
+        async (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+          return this._strategy.loadAll();
+        },
+      removeOne: <N extends string>(name: N): Promise<void> => {
+        return this._strategy.removeOne<N>(name);
+      },
+      clear: (): Promise<void> => {
+        return this._strategy.clear();
+      },
+    };
   }
 }

@@ -1,13 +1,29 @@
-import { NDiscoveryService, NStreamService } from "../services";
+import type { NDiscoveryService } from "../services";
 
 export interface IAbstractFileStorageStrategy {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  set<N extends string>(
+  count(): Promise<number>;
+  setOne<N extends string>(
     name: N,
     files: NAbstractFileStorageStrategy.FileInfo
   ): Promise<void>;
+  setMany(files: NAbstractFileStorageStrategy.FilesInfo): Promise<void>;
+  getOne<N extends string>(
+    name: N
+  ): Promise<NAbstractFileStorageStrategy.FileInfo | null>;
+  getAll(): Promise<NAbstractFileStorageStrategy.FilesInfo | null>;
+  updateOne<N extends string>(
+    name: N,
+    file: NAbstractFileStorageStrategy.FileInfo
+  ): Promise<void>;
+  loadOne<N extends string>(
+    name: N
+  ): Promise<NAbstractFileStorageStrategy.FileInfo | null>;
+  loadAll<>(): Promise<NAbstractFileStorageStrategy.FilesInfo | null>;
+  removeOne<N extends string>(name: N): Promise<void>;
+  clear(): Promise<void>;
 }
 
 export namespace NAbstractFileStorageStrategy {
@@ -36,11 +52,16 @@ export namespace NAbstractFileStorageStrategy {
   }
 
   type FileInfo = Pick<
-    NStreamService.StreamInfo,
+    StreamInfo,
     "type" | "encoding" | "mimetype" | "file"
   > & {
     streamId: string;
     fieldName: string;
     fileName: string;
   };
+
+  type FilesInfo = {
+    name: string;
+    file: NAbstractFileStorageStrategy.FileInfo;
+  }[];
 }
