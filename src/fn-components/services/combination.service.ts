@@ -1,16 +1,16 @@
 import { injectable, inject } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { container } from "~container";
 import { AbstractService } from "./abstract.service";
 
 import type {
   IAbstractFactory,
+  IAbstractFileStorageStrategy,
   IContextService,
   IDiscoveryService,
   IExceptionProvider,
   ILoggerService,
-  IRabbitMQTunnel,
 } from "~types";
-import { container } from "~container";
 
 @injectable()
 export class CombinationService extends AbstractService {
@@ -26,7 +26,9 @@ export class CombinationService extends AbstractService {
     @inject(CoreSymbols.HttpFactory)
     private readonly _httpFactory: IAbstractFactory,
     @inject(CoreSymbols.WsFactory)
-    private readonly _wsFactory: IAbstractFactory
+    private readonly _wsFactory: IAbstractFactory,
+    @inject(CoreSymbols.FileStorageFactory)
+    private readonly _fileStorage: IAbstractFactory
   ) {
     super();
   }
@@ -35,6 +37,7 @@ export class CombinationService extends AbstractService {
     try {
       await this._httpFactory.run();
       await this._wsFactory.run();
+      await this._fileStorage.run();
       return true;
     } catch (e) {
       this._loggerService.error(e, {
@@ -57,6 +60,7 @@ export class CombinationService extends AbstractService {
 
   protected async destroy(): Promise<void> {
     try {
+      await this._fileStorage.stand();
       await this._httpFactory.stand();
       await this._wsFactory.stand();
     } catch (e) {

@@ -17,6 +17,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import ws from "ws";
 import libAmqp from "amqplib/callback_api";
+import workerpool from "workerpool";
 
 import { StringObject, UnknownObject } from "../utils";
 
@@ -58,6 +59,7 @@ export namespace Fastify {
   export type Request = fastify.FastifyRequest;
   export type Response = fastify.FastifyReply;
   export type Instance = fastify.FastifyInstance;
+  export type FastifyError = fastify.FastifyError;
 
   export type SchemaRequest<
     BODY = UnknownObject,
@@ -375,4 +377,9 @@ export namespace RabbitMQ {
   export type ExchangeOptions = libAmqp.Options.AssertExchange;
   export type ConsumeOptions = libAmqp.Options.Consume;
   export type Message = libAmqp.Message;
+}
+
+export namespace WorkerPool {
+  export type WorkerPool = workerpool.Pool;
+  export type WorkerPoolOptions = workerpool.WorkerPoolOptions;
 }

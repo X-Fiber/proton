@@ -4,6 +4,7 @@ import {
   NContextService,
   NDiscoveryService,
   NSchemaService,
+  NStreamService,
 } from "../services";
 import { AuthScope } from "../services/schema.service";
 
@@ -39,7 +40,7 @@ export namespace NAbstractHttpAdapter {
   > &
     Pick<NDiscoveryService.CoreConfig["adapters"], "serverTag">;
 
-  export type Request<
+  export type ApiRequest<
     BODY = any,
     PARAMS extends StringObject = never,
     HEADERS extends StringObject = never,
@@ -52,6 +53,19 @@ export namespace NAbstractHttpAdapter {
     headers: HEADERS;
     params: PARAMS;
     queries: QUERIES;
+  };
+
+  export type StreamRequest<
+    P extends StringObject = never,
+    H extends StringObject = never,
+    Q extends ModeObject = never
+  > = {
+    url: string;
+    path: string;
+    files: NStreamService.FileInfo[];
+    headers: H;
+    params: P;
+    queries: Q;
   };
 
   export type ResponseFormat = "json" | "redirect" | "status";
@@ -98,8 +112,14 @@ export namespace NAbstractHttpAdapter {
       }
     : never);
 
-  export type Handler = (
-    request: Request<any, any, any, any>,
+  export type ApiHandler = (
+    request: ApiRequest<any, any, any, any>,
+    agents: NSchemaService.Agents,
+    context: Context
+  ) => Promise<Response | void>;
+
+  export type StreamHandler = (
+    request: StreamRequest<any, any, any, any>,
     agents: NSchemaService.Agents,
     context: Context
   ) => Promise<Response | void>;

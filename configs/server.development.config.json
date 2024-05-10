@@ -17,5 +17,11 @@
     "rabbitMQ": {
       "enable": true
     }
+  },
+  "strategies": {
+    "fileStorage": {
+      "enable": true,
+      "type": "buffer"
+    }
   }
 }

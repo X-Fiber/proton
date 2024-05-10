@@ -4,3 +4,4 @@ export type * from "./logger.service";
 export type * from "./scrambler.service";
 export type * from "./context.service";
 export type * from "./schema.service";
+export type * from "./task.service";

@@ -32,6 +32,12 @@ export const setBroker = <E extends string>(
   return structure;
 };
 
+export const setStreamer = <E extends string>(
+  structure: NSchemaLoader.StreamerStructure<E>
+): NSchemaLoader.StreamerStructure<E> => {
+  return structure;
+};
+
 export const setHelper = <T extends Record<string, AnyFn>>(structure: T) => {
   return structure;
 };

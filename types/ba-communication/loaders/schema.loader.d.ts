@@ -5,9 +5,11 @@ import {
   NAbstractHttpAdapter,
   NSchemaService,
   NMongoProvider,
+  NStreamService,
 } from "../../fn-components";
 import { Typeorm } from "../../packages";
 import { NRabbitMQConnector } from "../../connectors";
+import { StreamLimits } from "../../fn-components/services/schema.service";
 
 export interface ISchemaLoader {
   readonly services: NSchemaService.BusinessScheme;
@@ -26,8 +28,20 @@ export namespace NSchemaLoader {
         params?: NSchemaService.RouteParams[];
         headers?: NSchemaService.HeaderParams[];
         queries?: NSchemaService.QueryParams[];
-        handler: NAbstractHttpAdapter.Handler;
+        handler: NAbstractHttpAdapter.ApiHandler;
       };
+    };
+  };
+
+  export type StreamerStructure<R extends string = string> = {
+    [key in R]: {
+      scope?: NSchemaService.AuthScope;
+      version?: NSchemaService.Version;
+      params?: NSchemaService.RouteParams[];
+      headers?: NSchemaService.HeaderParams[];
+      queries?: NSchemaService.QueryParams[];
+      limits?: NStreamService.StreamLimits;
+      handler: NAbstractHttpAdapter.StreamHandler;
     };
   };
 
@@ -106,6 +120,7 @@ export namespace NSchemaLoader {
     emitter?: EmitterStructure;
     helper?: HelperStructure;
     broker?: BrokerStructure;
+    streamer?: StreamerStructure;
     dictionaries?: DictionaryStructure | DictionaryStructure[];
     validator?: ValidatorStructure;
     typeorm?: {

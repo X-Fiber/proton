@@ -15,7 +15,7 @@ import type {
   IIntegrationAgent,
   NContextService,
   IContextService,
-  ISchemaService,
+  ISchemeService,
   NSchemaService,
 } from "~types";
 
@@ -34,8 +34,8 @@ export class RabbitMQConnector
     protected readonly loggerService: ILoggerService,
     @inject(CoreSymbols.ContextService)
     protected _contextService: IContextService,
-    @inject(CoreSymbols.SchemaService)
-    protected _schemaService: ISchemaService
+    @inject(CoreSymbols.SchemeService)
+    protected _schemaService: ISchemeService
   ) {
     super();
 

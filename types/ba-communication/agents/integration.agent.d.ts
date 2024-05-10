@@ -1,4 +1,4 @@
-import { IMailIntegration } from "../../fn-components";
+import type { IMailIntegration } from "../../fn-components";
 
 export interface IIntegrationAgent {
   readonly mailer: NIntegrationAgent.Mailer;

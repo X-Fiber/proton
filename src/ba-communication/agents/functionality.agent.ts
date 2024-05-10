@@ -3,7 +3,8 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { Guards, Helpers } from "~utils";
 
-import {
+import type {
+  AnyFn,
   Jwt,
   Nullable,
   UnknownObject,
@@ -27,6 +28,11 @@ import {
   IRabbitMQTunnel,
   NRabbitMQConnector,
   NRabbitMQTunnel,
+  NTaskScheduler,
+  ITaskService,
+  ITaskScheduler,
+  NAbstractFileStorageStrategy,
+  IFileStorageFactory,
 } from "~types";
 
 @injectable()
@@ -40,8 +46,12 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     private readonly _scramblerService: IScramblerService,
     @inject(CoreSymbols.ContextService)
     private readonly _contextService: IContextService,
+    @inject(CoreSymbols.TaskService)
+    private readonly _taskService: ITaskService,
     @inject(CoreSymbols.WsAdapter)
-    private readonly _wsAdapter: IAbstractWsAdapter
+    private readonly _wsAdapter: IAbstractWsAdapter,
+    @inject(CoreSymbols.FileStorageFactory)
+    private readonly _fileStorage: IFileStorageFactory
   ) {}
 
   public get discovery(): NFunctionalityAgent.Discovery {
@@ -332,6 +342,35 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     };
   }
 
+  public get scheduler(): NFunctionalityAgent.Scheduler {
+    return {
+      on: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.on(event, listener);
+      },
+      once: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.on(event, listener);
+      },
+      off: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.off(event, listener);
+      },
+      removeListener: (event: NTaskScheduler.Event, listener: AnyFn): void => {
+        this._taskService.removeListener(event, listener);
+      },
+      set: <K extends string>(
+        name: K,
+        task: NTaskScheduler.Task
+      ): ITaskScheduler => {
+        return this._taskService.set(name, task);
+      },
+      get: <K extends string>(event: K): NTaskScheduler.Task | undefined => {
+        return this._taskService.get<K>(event);
+      },
+      delete: <K extends string>(event: K): boolean => {
+        return this._taskService.delete(event);
+      },
+    };
+  }
+
   public get ws(): NFunctionalityAgent.Ws {
     return {
       send: (sessionId, type, payload): void => {
@@ -358,6 +397,52 @@ export class FunctionalityAgent implements IFunctionalityAgent {
 
         const name = `${store.service}.${store.domain}.${store.version}.${queue}`;
         tunnel.sendToQueue<P, A>(name, payload);
+      },
+    };
+  }
+
+  public get fileStorage(): NFunctionalityAgent.FileStorage {
+    return {
+      count: (): Promise<number> => {
+        return this._fileStorage.strategy.count();
+      },
+      setOne: <N extends string>(
+        name: N,
+        files: NAbstractFileStorageStrategy.FileInfo
+      ) => {
+        return this._fileStorage.strategy.setOne<N>(name, files);
+      },
+      setMany: (files: NAbstractFileStorageStrategy.FilesInfo) => {
+        return this._fileStorage.strategy.setMany(files);
+      },
+      getOne: <N extends string>(
+        name: N
+      ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
+        return this._fileStorage.strategy.getOne<N>(name);
+      },
+      getAll: (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+        return this._fileStorage.strategy.getAll();
+      },
+      updateOne: <N extends string>(
+        name: N,
+        file: NAbstractFileStorageStrategy.FileInfo
+      ): Promise<void> => {
+        return this._fileStorage.strategy.updateOne<N>(name, file);
+      },
+      loadOne: <N extends string>(
+        name: N
+      ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
+        return this._fileStorage.strategy.loadOne<N>(name);
+      },
+      loadAll:
+        async (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+          return this._fileStorage.strategy.loadAll();
+        },
+      removeOne: <N extends string>(name: N): Promise<void> => {
+        return this._fileStorage.strategy.removeOne<N>(name);
+      },
+      clear: (): Promise<void> => {
+        return this._fileStorage.strategy.clear();
       },
     };
   }

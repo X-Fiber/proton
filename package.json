@@ -57,6 +57,7 @@
   "homepage": "https://github.com/pestsov-v/cap-server-core#readme",
   "dependencies": {
     "@chaminjector/seeds-discovery-service": "^0.0.11",
+    "@fastify/multipart": "^8.2.0",
     "amqplib": "^0.10.4",
     "bcrypt": "^5.1.1",
     "colors": "^1.4.0",
@@ -74,6 +75,7 @@
     "typeorm": "^0.3.17",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
+    "workerpool": "^9.1.1",
     "ws": "^8.14.2"
   },
   "devDependencies": {
