@@ -230,7 +230,7 @@ export class RabbitMQConnector
     topic: NRabbitMQConnector.ExchangeTopic
   ): Promise<void> {
     // TODO: Method not implemented
-    console.log(channel, queue, topic);
+    console.warn(channel, queue, topic);
   }
 
   private async _callHandler(

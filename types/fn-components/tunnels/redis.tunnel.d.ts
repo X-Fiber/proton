@@ -5,6 +5,7 @@ export interface IRedisTunnel {
   readonly hashMulti: NRedisTunnel.HashMulti;
   readonly keys: NRedisTunnel.Keys;
   readonly set: NRedisTunnel.Set;
+  readonly streams: NRedisTunnel.Streams;
 }
 
 export namespace NRedisTunnel {
@@ -27,6 +28,7 @@ export namespace NRedisTunnel {
   };
 
   export type Keys = {
+    checkOne(id: string): Promise<boolean>;
     getAll(id: string): Promise<string[]>;
     rename(oldKey: string, newKey: string): Promise<"OK">;
     delete(id: string): Promise<number>;
@@ -48,7 +50,13 @@ export namespace NRedisTunnel {
   export type Set = {
     get(id: string): Promise<Nullable<string[]>>;
     add(id: string, value: string[]): Promise<void>;
+    addWithTTl(id: string, value: string[], ttl: number): Promise<void>;
     update(id: string, value: string[]): Promise<void>;
     remove(id: string, item: string | string[]): Promise<void>;
+  };
+
+  export type Streams = {
+    addExpiredStream<T>(name: string, item: T, ttl: number): Promise<void>;
+    addExpiredStreams<T>(item: T[], ttl: number): Promise<void>;
   };
 }

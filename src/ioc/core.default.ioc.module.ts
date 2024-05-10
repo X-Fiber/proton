@@ -39,6 +39,8 @@ import {
   TaskService,
   FileStorageFactory,
   BufferFileStorageStrategy,
+  RedisFileStorageStrategy,
+  CacheProvider,
 } from "~fn-components";
 
 import type {
@@ -74,6 +76,7 @@ import type {
   IRabbitMQTunnel,
   ITaskService,
   IAbstractFileStorageStrategy,
+  ICacheProvider,
 } from "~types";
 
 export const CoreModule = new inversify.ContainerModule(
@@ -138,6 +141,9 @@ export const CoreModule = new inversify.ContainerModule(
     bind<IPermissionProvider>(CoreSymbols.PermissionProvider)
       .to(PermissionProvider)
       .inTransientScope();
+    bind<ICacheProvider>(CoreSymbols.CacheProvider)
+      .to(CacheProvider)
+      .inTransientScope();
 
     // Tunnels
     bind<IMongoTunnel>(CoreSymbols.MongoTunnel)
@@ -196,6 +202,9 @@ export const CoreModule = new inversify.ContainerModule(
     // Strategies
     bind<IAbstractFileStorageStrategy>(CoreSymbols.BufferFileStorageStrategy)
       .to(BufferFileStorageStrategy)
+      .inSingletonScope();
+    bind<IAbstractFileStorageStrategy>(CoreSymbols.RedisFileStorageStrategy)
+      .to(RedisFileStorageStrategy)
       .inSingletonScope();
   }
 );

@@ -17,7 +17,7 @@ export class BufferFileStorageStrategy
   extends AbstractFileStorageStrategy
   implements IAbstractFileStorageStrategy
 {
-  private _config: NAbstractFileStorageStrategy.Config;
+  private _config: NAbstractFileStorageStrategy.BufferConfig;
   private _BUFFER_STORAGE:
     | IExpiringMap<string, NAbstractFileStorageStrategy.FileInfo>
     | undefined;
@@ -42,7 +42,7 @@ export class BufferFileStorageStrategy
     };
   }
 
-  private _setConfig(): NAbstractFileStorageStrategy.Config {
+  private _setConfig(): NAbstractFileStorageStrategy.BufferConfig {
     return {
       enable: this._discoveryService.getBoolean(
         "strategies.fileStorage.enable",
@@ -71,8 +71,6 @@ export class BufferFileStorageStrategy
     this._config = this._setConfig();
 
     if (!this._config.enable) return;
-
-    console.log("FILE_STORAGE");
 
     try {
       this._BUFFER_STORAGE = new ExpiringMap({
@@ -125,7 +123,7 @@ export class BufferFileStorageStrategy
   public async setMany(
     structures: NAbstractFileStorageStrategy.FilesInfo
   ): Promise<void> {
-    structures.forEach((s) => this._bufferStorage.set(s.name, s.file));
+    structures.forEach((s, n) => this._bufferStorage.set(n, s));
   }
 
   public async getOne<N extends string>(
@@ -136,9 +134,7 @@ export class BufferFileStorageStrategy
   }
 
   public async getAll(): Promise<NAbstractFileStorageStrategy.FilesInfo | null> {
-    const filesArray = Array.from(this._bufferStorage);
-    const files = filesArray.map(([name, file]) => ({ name, file }));
-    return files.length > 0 ? files : null;
+    return this._bufferStorage.size > 0 ? this._bufferStorage : null;
   }
 
   public async updateOne<N extends string>(
@@ -158,11 +154,10 @@ export class BufferFileStorageStrategy
   }
 
   public async loadAll(): Promise<NAbstractFileStorageStrategy.FilesInfo | null> {
-    const filesArray = Array.from(this._bufferStorage);
-    const files = filesArray.map(([name, file]) => ({ name, file }));
+    const files = this._bufferStorage.size > 0 ? this._bufferStorage : null;
     this._bufferStorage.clear();
 
-    return files.length > 0 ? files : null;
+    return files;
   }
 
   public async removeOne<N extends string>(name: N): Promise<void> {

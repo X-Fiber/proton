@@ -369,7 +369,7 @@ export class TaskService extends AbstractService implements ITaskService {
 
       return true;
     } catch (e) {
-      console.log(e);
+      console.error(e);
       return false;
     }
   }

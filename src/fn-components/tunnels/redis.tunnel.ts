@@ -13,6 +13,7 @@ import {
   IRedisTunnel,
   NRedisTunnel,
 } from "~types";
+import { log } from "winston";
 
 @injectable()
 export class RedisTunnel implements IRedisTunnel {
@@ -130,6 +131,9 @@ export class RedisTunnel implements IRedisTunnel {
   // keys
   public get keys(): NRedisTunnel.Keys {
     return {
+      checkOne: (id: string): Promise<boolean> => {
+        return this._checkKey(id);
+      },
       getAll: (id: string): Promise<string[]> => {
         return this._getAllKeys(id);
       },
@@ -140,6 +144,15 @@ export class RedisTunnel implements IRedisTunnel {
         return this._deleteKey(id);
       },
     };
+  }
+
+  private async _checkKey(id: string): Promise<boolean> {
+    try {
+      const keys = await this._connection.keys(id);
+      return keys.length > 0;
+    } catch (e) {
+      throw this._catchError(e);
+    }
   }
 
   private async _getAllKeys(id: string): Promise<string[]> {
@@ -219,6 +232,9 @@ export class RedisTunnel implements IRedisTunnel {
       add: (id: string, value: string[]): Promise<void> => {
         return this._addSet(id, value);
       },
+      addWithTTl: (id: string, value: string[], ttl: number): Promise<void> => {
+        return this._addSetWithTTl(id, value, ttl);
+      },
       update: (id: string, value: string[]): Promise<void> => {
         return this._updateSet(id, value);
       },
@@ -245,6 +261,18 @@ export class RedisTunnel implements IRedisTunnel {
     }
   }
 
+  private async _addSetWithTTl(
+    id: string,
+    value: string[],
+    ttl: number
+  ): Promise<void> {
+    try {
+      await this._connection.multi().sadd(id, value).expire(id, ttl).exec();
+    } catch (e) {
+      throw this._catchError(e);
+    }
+  }
+
   private async _updateSet(id: string, value: string[]): Promise<void> {
     try {
       await this._connection.multi().del(id).sadd(id, value).exec();
@@ -262,6 +290,40 @@ export class RedisTunnel implements IRedisTunnel {
     } catch (e) {
       throw this._catchError(e);
     }
+  }
+
+  public get streams(): NRedisTunnel.Streams {
+    return {
+      addExpiredStream: <T>(name: string, item: T, ttl: number) => {
+        return this._addExpiredStream<T>(name, item, ttl);
+      },
+      addExpiredStreams: <T>(item: T[], ttl: number) => {
+        return this._addExpiredStreams<T>(item, ttl);
+      },
+    };
+  }
+
+  private async _addExpiredStream<T>(
+    name: string,
+    item: T,
+    ttl: number
+  ): Promise<void> {
+    try {
+      await this._connection
+        .multi()
+        .set(name, JSON.stringify(item))
+        .expire(name, ttl)
+        .exec();
+    } catch (e) {
+      throw this._catchError(e);
+    }
+  }
+
+  private async _addExpiredStreams<T>(
+    structure: T[],
+    ttl: number
+  ): Promise<void> {
+    // TODO: need implemented
   }
 
   private _catchError(e: any): ICoreError {

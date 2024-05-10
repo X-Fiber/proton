@@ -21,16 +21,27 @@ export interface IAbstractFileStorageStrategy {
   loadOne<N extends string>(
     name: N
   ): Promise<NAbstractFileStorageStrategy.FileInfo | null>;
-  loadAll<>(): Promise<NAbstractFileStorageStrategy.FilesInfo | null>;
+  loadAll(): Promise<NAbstractFileStorageStrategy.FilesInfo | null>;
   removeOne<N extends string>(name: N): Promise<void>;
   clear(): Promise<void>;
 }
 
 export namespace NAbstractFileStorageStrategy {
-  export type Config = Pick<
+  export type BufferConfig = Pick<
     NDiscoveryService.CoreConfig["strategies"]["fileStorage"],
     "enable" | "buffer"
   >;
+
+  export type RedisConfig = Pick<
+    NDiscoveryService.CoreConfig["strategies"]["fileStorage"],
+    "enable"
+  > &
+    Required<
+      Pick<
+        NDiscoveryService.CoreConfig["strategies"]["fileStorage"]["buffer"],
+        "valueTimeout"
+      >
+    >;
 
   export type StreamLimits = {
     fieldNameSize?: number;
@@ -41,7 +52,6 @@ export namespace NAbstractFileStorageStrategy {
   };
 
   interface StreamInfo {
-    streamId: string;
     type: string;
     fieldname: string;
     filename: string;
@@ -55,13 +65,15 @@ export namespace NAbstractFileStorageStrategy {
     StreamInfo,
     "type" | "encoding" | "mimetype" | "file"
   > & {
-    streamId: string;
     fieldName: string;
     fileName: string;
   };
 
-  type FilesInfo = {
-    name: string;
-    file: NAbstractFileStorageStrategy.FileInfo;
-  }[];
+  type RedisItem = Pick<StreamInfo, "type" | "encoding" | "mimetype"> & {
+    file: string;
+    fieldName: string;
+    fileName: string;
+  };
+
+  type FilesInfo = Map<string, NAbstractFileStorageStrategy.FileInfo>;
 }

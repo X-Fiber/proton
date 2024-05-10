@@ -31,7 +31,9 @@ export class FileStorageFactory
     @inject(CoreSymbols.LoggerService)
     protected readonly _loggerService: ILoggerService,
     @inject(CoreSymbols.BufferFileStorageStrategy)
-    protected readonly _bufferStrategy: IAbstractFileStorageStrategy
+    protected readonly _bufferStrategy: IAbstractFileStorageStrategy,
+    @inject(CoreSymbols.RedisFileStorageStrategy)
+    protected readonly _redisStrategy: IAbstractFileStorageStrategy
   ) {
     super();
   }
@@ -48,6 +50,13 @@ export class FileStorageFactory
         }
         break;
       case "redis":
+        try {
+          await this._redisStrategy.start();
+          this._STRATEGY = this._redisStrategy;
+        } catch (e) {
+          console.error(e);
+        }
+        break;
       default:
         throw Helpers.switchChecker(kind);
     }
@@ -65,6 +74,13 @@ export class FileStorageFactory
         }
         break;
       case "redis":
+        try {
+          await this._redisStrategy.stop();
+          this._STRATEGY = this._redisStrategy;
+        } catch (e) {
+          console.error(e);
+        }
+        break;
       default:
         throw Helpers.switchChecker(kind);
     }
@@ -100,7 +116,7 @@ export class FileStorageFactory
       ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
         return this._strategy.getOne<N>(name);
       },
-      getMany: (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
+      getAll: (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
         return this._strategy.getAll();
       },
       updateOne: <N extends string>(
@@ -114,7 +130,7 @@ export class FileStorageFactory
       ): Promise<NAbstractFileStorageStrategy.FileInfo | null> => {
         return this._strategy.loadOne<N>(name);
       },
-      loadMany:
+      loadAll:
         async (): Promise<NAbstractFileStorageStrategy.FilesInfo | null> => {
           return this._strategy.loadAll();
         },
