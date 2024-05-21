@@ -1,4 +1,4 @@
-import { ExtendedRecordObject } from "../utils";
+import type { ExtendedRecordObject } from "../utils";
 
 export interface ILocalizationProvider {
   getDictionary<E extends ExtendedRecordObject = ExtendedRecordObject>(

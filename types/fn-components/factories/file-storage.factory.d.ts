@@ -1,5 +1,5 @@
-import { IAbstractFactory } from "./abstract.factory";
-import { IAbstractFileStorageStrategy } from "../strategies";
+import type { IAbstractFactory } from "./abstract.factory";
+import type { IAbstractFileStorageStrategy } from "../strategies";
 
 export interface IFileStorageFactory extends IAbstractFactory {
   readonly strategy: NFileStorageFactory.Strategy;

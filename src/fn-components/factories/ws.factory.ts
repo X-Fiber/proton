@@ -4,10 +4,10 @@ import { Helpers } from "~utils";
 import { AbstractFactory } from "./abstract.factory";
 
 import type {
-  IAbstractFactory,
-  IAbstractWsAdapter,
-  IDiscoveryService,
   ILoggerService,
+  IAbstractFactory,
+  IDiscoveryService,
+  IAbstractWsAdapter,
 } from "~types";
 
 @injectable()

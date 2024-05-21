@@ -1,25 +1,25 @@
-import {
+import type {
   FnObject,
   KeyStringLiteralBuilder,
-  NSchemaService,
+  NSchemeService,
 } from "../../fn-components";
 
-export interface ISchemaAgent {
-  readonly schema: NSchemaService.BusinessScheme;
+export interface ISchemeAgent {
+  readonly schema: NSchemeService.BusinessScheme;
 
   getAnotherMongoRepository<D extends string, T extends FnObject = FnObject>(
     domain: D
   ): T;
   getMongoRepository<T extends FnObject = FnObject>(): T;
   getValidator<
-    T extends Record<string, NSchemaService.ValidateObject>
-  >(): NSchemaService.ValidatorStructure<T>;
+    T extends Record<string, NSchemeService.ValidateObject>
+  >(): NSchemeService.ValidatorStructure<T>;
   getAnotherValidator<
     D extends string,
-    T extends Record<string, NSchemaService.ValidateObject>
+    T extends Record<string, NSchemeService.ValidateObject>
   >(
     domain: D
-  ): NSchemaService.ValidatorStructure<T>;
+  ): NSchemeService.ValidatorStructure<T>;
   getTypeormRepository<T extends FnObject = FnObject>(): T;
   getAnotherTypeormRepository<D extends string, T extends FnObject = FnObject>(
     domain: D
@@ -54,9 +54,7 @@ export interface ISchemaAgent {
 
 export namespace NSchemaAgent {
   export type Localization = {
-    getDictionary: "";
-    getAnotherDictionary: "";
-    getResource: ISchemaAgent["getResource"];
-    getAnotherResource: ISchemaAgent["getAnotherResource"];
+    getResource: ISchemeAgent["getResource"];
+    getAnotherResource: ISchemeAgent["getAnotherResource"];
   };
 }

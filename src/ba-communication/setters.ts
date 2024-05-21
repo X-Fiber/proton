@@ -1,4 +1,9 @@
-import { AnyFn, AnyObject, ExtendedRecordObject, NSchemaLoader } from "~types";
+import type {
+  AnyFn,
+  AnyObject,
+  ExtendedRecordObject,
+  NSchemaLoader,
+} from "~types";
 
 export const setService = <S extends string>(
   service: S,
@@ -7,7 +12,7 @@ export const setService = <S extends string>(
   return { service, domains };
 };
 
-export const setPointer = <D extends string>(
+export const setRegistry = <D extends string>(
   domain: D,
   documents: NSchemaLoader.DocumentsStructure
 ): NSchemaLoader.DomainStructure => {

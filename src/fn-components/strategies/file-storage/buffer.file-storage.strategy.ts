@@ -5,9 +5,9 @@ import { ExpiringMap } from "~utils";
 import { AbstractFileStorageStrategy } from "./abstract.file-storage.strategy";
 
 import type {
-  IDiscoveryService,
   IExpiringMap,
   ILoggerService,
+  IDiscoveryService,
   NAbstractFileStorageStrategy,
   IAbstractFileStorageStrategy,
 } from "~types";

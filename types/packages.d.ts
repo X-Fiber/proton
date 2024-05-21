@@ -1,43 +1,38 @@
-import events from "events";
-import async_hooks from "async_hooks";
-import http from "http";
-import https from "https";
+// internal
+import type events from "events";
+import type http from "http";
+import type https from "https";
+import type async_hooks from "async_hooks";
 
-import nconf from "nconf";
-import winston from "winston";
-import colors from "colors";
-import inversify from "inversify";
-import fastify from "fastify";
-import express from "express";
-import mongoose from "mongoose";
-import joi from "joi";
-import typeorm from "typeorm";
-import { Redis, RedisOptions } from "ioredis";
-import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
-import ws from "ws";
-import libAmqp from "amqplib/callback_api";
-import workerpool from "workerpool";
+// external
+import type colors from "colors";
+import type inversify from "inversify";
+import type typeorm from "typeorm";
+import type jwt from "jsonwebtoken";
+import type mongoose from "mongoose";
+import type winston from "winston";
+import type joi from "joi";
+import type nodemailer from "nodemailer";
+import type fastify from "fastify";
+import type express from "express";
+import type { Redis, RedisOptions } from "ioredis";
+import type ws from "ws";
+import type libAmqp from "amqplib/callback_api";
+import type workerpool from "workerpool";
+import type SeedsDiscovery from "@chaminjector/seeds-discovery-service";
 
-import { StringObject, UnknownObject } from "../utils";
-
-import SeedsDiscovery from "@chaminjector/seeds-discovery-service";
-import { Options } from "amqplib/properties";
+// utils
+import type { StringObject, UnknownObject } from "../utils";
 
 export namespace Inversify {
   export namespace interfaces {
     export type Bind = inversify.interfaces.Bind;
     export type Container = inversify.interfaces.Container;
-    export type ContainerModule = inversify.ContainerModule;
   }
 }
 
 export namespace Events {
   export type EventEmitter = events.EventEmitter;
-}
-
-export namespace Nconf {
-  export type Provider = nconf.Provider;
 }
 
 export namespace Winston {
@@ -128,7 +123,7 @@ export namespace Mongoose {
   >;
 
   export type InsertManyResult<TRawDocType = TRawDocType> =
-    Mongoose.InsertManyResult<TRawDocType>;
+    Mongoose.InsertManyResult;
   export type HydrateResult<
     TRawDocType,
     THydratedDocumentType = Mongoose.THydratedDocumentType<TRawDocType>
@@ -354,15 +349,6 @@ export namespace Http {
 
 export namespace Https {
   export type Server = https.Server;
-}
-
-export namespace Openapi {
-  export type Path = { [method in HttpMethods]?: OperationObject<T> };
-  export type OperationObject = OpenAPIV3.OperationObject;
-  export type ResponseObject = OpenAPIV3.ResponseObject;
-  export type MediaTypeObject = OpenAPIV3.MediaTypeObject;
-  export type HttpMethods = OpenAPIV3.HttpMethods;
-  export type NonArraySchemaObject = OpenAPIV3.NonArraySchemaObject;
 }
 
 export namespace Seeds {

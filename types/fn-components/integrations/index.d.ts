@@ -1,2 +1,2 @@
-export * from './abstract.integration';
-export * from './mail.intergration';
+export type * from "./abstract.integration";
+export type * from "./mail.intergration";

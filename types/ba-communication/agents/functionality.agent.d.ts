@@ -1,18 +1,18 @@
 import type {
-  IAbstractWsAdapter,
-  ICacheProvider,
-  IDiscoveryService,
-  IExceptionProvider,
-  IFileStorageFactory,
-  ILoggerService,
-  IPermissionProvider,
   IRabbitMQTunnel,
   IRouteException,
-  IScramblerService,
-  ISessionProvider,
-  ITaskService,
   ITypeormTunnel,
+  ITaskService,
+  ILoggerService,
+  ICacheProvider,
+  ISessionProvider,
+  IScramblerService,
+  IDiscoveryService,
+  IAbstractWsAdapter,
+  IExceptionProvider,
   NExceptionProvider,
+  IFileStorageFactory,
+  IPermissionProvider,
 } from "../../fn-components";
 
 export interface IFunctionalityAgent {
@@ -46,7 +46,7 @@ export namespace NFunctionalityAgent {
     warn: ILoggerService["logSchemaWarn"];
     api: ILoggerService["logSchemaApi"];
     info: ILoggerService["logSchemaInfo"];
-    debug: ILoggerService["logSchemaDebug"];
+    debug: (msg: string) => void;
   };
 
   export type Utils = {

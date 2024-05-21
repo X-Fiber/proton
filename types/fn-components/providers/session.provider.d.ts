@@ -1,6 +1,6 @@
-import { UnknownObject } from "../utils";
-import { Ws } from "../../packages";
-import { IIntegrationAgent } from "../../ba-communication";
+import type { Ws } from "../../packages";
+import type { UnknownObject } from "../utils";
+import type { IIntegrationAgent } from "../../ba-communication";
 
 export interface ISessionProvider {
   open<T extends UnknownObject>(payload: T): Promise<string>;
@@ -15,26 +15,8 @@ export interface ISessionProvider {
 }
 
 export namespace NSessionProvider {
-  export const enum ClientEvent {
-    HANDSHAKE = "handshake",
-    UPLOAD_PAGE = "upload:page",
-    AUTHENTICATE = "authenticate",
-    SESSION_TO_SESSION = "session:to:session",
-    BROADCAST_TO_SERVICE = "broadcast:to:service",
-  }
-
   export type Agents = {
     integrationAgent: IIntegrationAgent;
-  };
-
-  export type ClientData<
-    P,
-    H extends Record<string, string> = Record<string, string>,
-    E extends ClientEvent = ClientEvent
-  > = {
-    event: E;
-    payload: P;
-    headers?: H;
   };
 
   export type Config = {
@@ -47,11 +29,6 @@ export namespace NSessionProvider {
     websocketKey?: string;
     ip?: string;
   }
-
-  export type SessionToSessionPayload = {
-    recipientId: string;
-    payload?: UnknownObject;
-  };
 
   export interface BaseConnection extends ConnectionDetails {
     auth: boolean;

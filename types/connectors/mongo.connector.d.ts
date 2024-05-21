@@ -1,5 +1,5 @@
-import { IAbstractConnector } from "./abstract.connector";
-import { Mongoose } from "../packages";
+import type { Mongoose } from "../packages";
+import type { IAbstractConnector } from "./abstract.connector";
 
 export interface IMongoConnector extends IAbstractConnector {
   readonly connection: Mongoose.Mongoose;

@@ -3,12 +3,12 @@ import { CoreSymbols } from "~symbols";
 
 import type {
   IInitiator,
-  IIntegrationConnector,
   IMongoConnector,
   IRedisConnector,
   IComputeConnector,
   ITypeormConnector,
   IRabbitMQConnector,
+  IIntegrationConnector,
 } from "~types";
 
 @injectable()

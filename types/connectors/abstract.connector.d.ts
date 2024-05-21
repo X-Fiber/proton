@@ -1,4 +1,4 @@
-import { Voidable } from "../fn-components";
+import type { Voidable } from "../fn-components";
 
 export interface IAbstractConnector {
   start(): Promise<void>;

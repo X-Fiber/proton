@@ -1,8 +1,7 @@
-import { IAbstractService } from "./abstract.service";
-
-import { UnknownObject } from "../utils";
-import { Jwt } from "../../packages";
-import { NDiscoveryService } from "./discovery.service";
+import type { Jwt } from "../../packages";
+import type { UnknownObject } from "../utils";
+import type { IAbstractService } from "./abstract.service";
+import type { NDiscoveryService } from "./discovery.service";
 
 export interface IScramblerService extends IAbstractService {
   readonly accessExpiredAt: number;

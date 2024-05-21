@@ -1,9 +1,9 @@
 import { injectable } from "~packages";
 
 import type {
-  IAbstractIntegration,
-  IDiscoveryService,
   ILoggerService,
+  IDiscoveryService,
+  IAbstractIntegration,
 } from "~types";
 
 @injectable()

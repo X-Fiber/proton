@@ -3,11 +3,11 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 
 import type {
-  IExceptionProvider,
   ILoggerService,
-  IRabbitMQConnector,
   IRabbitMQTunnel,
   NRabbitMQTunnel,
+  IExceptionProvider,
+  IRabbitMQConnector,
 } from "~types";
 
 @injectable()

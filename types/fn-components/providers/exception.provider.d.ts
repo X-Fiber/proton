@@ -1,8 +1,8 @@
-import { NLoggerService, NSchemaService } from "../services";
-import { UnknownObject, UTCDate } from "../utils";
+import type { UnknownObject, UTCDate } from "../utils";
+import type { NLoggerService, NSchemeService } from "../services";
 
 export interface IExceptionProvider {
-  throwValidation(errors: NSchemaService.ValidateErrors): IValidatorError;
+  throwValidation(errors: NSchemeService.ValidateErrors): IValidatorError;
   resolveValidation(
     e: IValidatorError
   ): NExceptionProvider.ResolveValidationStructure;
@@ -14,7 +14,7 @@ export interface IExceptionProvider {
 }
 
 export interface IValidatorError {
-  errors: NSchemaService.ValidateErrors;
+  errors: NSchemeService.ValidateErrors;
 }
 
 export interface IRouteException {
@@ -70,7 +70,7 @@ export namespace NExceptionProvider {
     payload: {
       responseType: string;
       data: {
-        errors: NSchemaService.ValidateErrors;
+        errors: NSchemeService.ValidateErrors;
       };
     };
   };
@@ -85,6 +85,7 @@ export namespace NExceptionProvider {
     requestId?: string;
     sessionId?: string;
     tag?: string;
+    code?: string;
     errorType: NLoggerService.ErrorType;
   };
 }

@@ -4,12 +4,11 @@ import { container } from "~container";
 import { AbstractService } from "./abstract.service";
 
 import type {
+  ILoggerService,
   IAbstractFactory,
-  IAbstractFileStorageStrategy,
   IContextService,
   IDiscoveryService,
   IExceptionProvider,
-  ILoggerService,
 } from "~types";
 
 @injectable()

@@ -1,4 +1,4 @@
-import { Voidable } from "../utils";
+import type { Voidable } from "../utils";
 
 export interface IAbstractService {
   readonly isStarted: boolean;

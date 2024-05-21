@@ -4,7 +4,5 @@
   "ignore": ["node_modules", "coverage", "dist"],
   "exec": "ts-node -r tsconfig-paths/register --files ./.test-development/index.ts",
   "restartable": "rs",
-  "env": {
-    "SERVER_SCHEMA": "cap"
-  }
+  "env": {}
 }

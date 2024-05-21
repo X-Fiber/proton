@@ -9,11 +9,10 @@ import {
   ICoreError,
   IContextService,
   IExceptionProvider,
-  IRedisConnector,
   IRedisTunnel,
   NRedisTunnel,
+  IRedisConnector,
 } from "~types";
-import { log } from "winston";
 
 @injectable()
 export class RedisTunnel implements IRedisTunnel {

@@ -1,23 +1,23 @@
 import { injectable, inject, fastify, uuid, jwt } from "~packages";
+import { ErrorCodes, ResponseType, SchemaHeaders, StatusCode } from "~common";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { Helpers } from "~utils";
-import { ResponseType, SchemaHeaders, StatusCode } from "~common";
 
 import { AbstractHttpAdapter } from "./abstract.http-adapter";
 
 import type {
   ModeObject,
   Fastify,
+  IRedisTunnel,
+  ISchemeService,
+  ILoggerService,
   IContextService,
   IDiscoveryService,
-  ILoggerService,
+  IScramblerService,
   IAbstractHttpAdapter,
   NAbstractHttpAdapter,
-  IScramblerService,
-  ISchemeService,
   NAbstractFileStorageStrategy,
-  IRedisTunnel,
 } from "~types";
 
 @injectable()
@@ -236,6 +236,8 @@ export class FastifyHttpAdapter
     req: NAbstractHttpAdapter.AdapterRequest<"fastify">,
     res: NAbstractHttpAdapter.AdapterResponse<"fastify">
   ): Promise<void> => {
+    console.log(req.params);
+
     const domain = this._getDomainStorage(
       req.params.service,
       req.params.domain
@@ -249,6 +251,7 @@ export class FastifyHttpAdapter
       return res.status(StatusCode.BAD_REQUEST).send({
         responseType: ResponseType.FAIL,
         data: {
+          code: ErrorCodes.fn.HttpAdapter.EMPTY_ROUTES_MAP,
           message: "Domain does not have any routes",
         },
       });
@@ -264,7 +267,7 @@ export class FastifyHttpAdapter
         .status(StatusCode.BAD_REQUEST)
         .send(
           this._buildApiMessage(
-            "0001.0003",
+            ErrorCodes.fn.HttpAdapter.ROUTE_NOT_FOUND,
             `Action '${req.params.action}' in version '${
               req.params.version
             }' and with http method '${req.method.toUpperCase()}' not found in '${
@@ -356,6 +359,7 @@ export class FastifyHttpAdapter
       return res.status(StatusCode.BAD_REQUEST).send({
         responseType: ResponseType.FAIL,
         data: {
+          code: ErrorCodes.fn.HttpAdapter.EMPTY_STREAM_MAP,
           message: "Domain does not have any streams",
         },
       });
@@ -369,7 +373,7 @@ export class FastifyHttpAdapter
         .status(StatusCode.BAD_REQUEST)
         .send(
           this._buildApiMessage(
-            "0001.0003",
+            ErrorCodes.fn.HttpAdapter.STREAM_NOT_FOUND,
             `Action '${req.params.action}' in version '${
               req.params.version
             }' and with http method '${req.method.toUpperCase()}' not found in '${
@@ -409,7 +413,7 @@ export class FastifyHttpAdapter
 
             const response: Record<string, unknown> = {
               type: ResponseType.FAIL,
-              code: "0001.0002",
+              code: ErrorCodes.fn.HttpAdapter.TOO_LARGE_FILE,
               message: `Request file '${streamInfo.filename}' with mimetype '${streamInfo.mimetype}' too large.`,
             };
 
@@ -478,7 +482,7 @@ export class FastifyHttpAdapter
     if (tag) {
       return res.status(StatusCode.BAD_REQUEST).send({
         type: "fail",
-        code: "0001.0001",
+        code: ErrorCodes.fn.HttpAdapter.ETAG_REQUIRED,
         message: "Etag header is required.",
       });
     }
@@ -500,7 +504,7 @@ export class FastifyHttpAdapter
       });
       return res.status(StatusCode.SERVER_ERROR).send({
         type: "fatal",
-        code: "0001.0001",
+        code: ErrorCodes.fn.HttpAdapter.INTERNAL_SERVER_ERROR,
         message: "Internal server error.",
       });
     }

@@ -1,18 +1,18 @@
-import {
+import type { Typeorm } from "../../packages";
+import type {
   AnyFn,
-  ExtendedRecordObject,
   HttpMethod,
-  NAbstractHttpAdapter,
-  NSchemaService,
-  NMongoProvider,
+  NMongoTunnel,
+  NSchemeService,
   NStreamService,
+  ExtendedRecordObject,
+  NAbstractHttpAdapter,
+  NAbstractFileStorageStrategy,
 } from "../../fn-components";
-import { Typeorm } from "../../packages";
-import { NRabbitMQConnector } from "../../connectors";
-import { StreamLimits } from "../../fn-components/services/schema.service";
+import type { NRabbitMQConnector } from "../../connectors";
 
-export interface ISchemaLoader {
-  readonly services: NSchemaService.BusinessScheme;
+export interface ISchemeLoader {
+  readonly services: NSchemeService.BusinessScheme;
 
   readonly init(): void;
   readonly destroy(): void;
@@ -23,11 +23,11 @@ export namespace NSchemaLoader {
   export type RouterStructure<R extends string = string> = {
     [key in R]: {
       [key in HttpMethod]?: {
-        scope?: NSchemaService.AuthScope;
-        version?: NSchemaService.Version;
-        params?: NSchemaService.RouteParams[];
-        headers?: NSchemaService.HeaderParams[];
-        queries?: NSchemaService.QueryParams[];
+        scope?: NSchemeService.AuthScope;
+        version?: NSchemeService.Version;
+        params?: NSchemeService.RouteParams[];
+        headers?: NSchemeService.HeaderParams[];
+        queries?: NSchemeService.QueryParams[];
         handler: NAbstractHttpAdapter.ApiHandler;
       };
     };
@@ -35,21 +35,21 @@ export namespace NSchemaLoader {
 
   export type StreamerStructure<R extends string = string> = {
     [key in R]: {
-      scope?: NSchemaService.AuthScope;
-      version?: NSchemaService.Version;
-      params?: NSchemaService.RouteParams[];
-      headers?: NSchemaService.HeaderParams[];
-      queries?: NSchemaService.QueryParams[];
-      limits?: NStreamService.StreamLimits;
+      scope?: NSchemeService.AuthScope;
+      version?: NSchemeService.Version;
+      params?: NSchemeService.RouteParams[];
+      headers?: NSchemeService.HeaderParams[];
+      queries?: NSchemeService.QueryParams[];
+      limits?: NAbstractFileStorageStrategy.StreamLimits;
       handler: NAbstractHttpAdapter.StreamHandler;
     };
   };
 
   export type EmitterStructure<E extends string = string> = {
     [key in E]: {
-      [key in NSchemaService.EventKind]?: {
-        scope?: NSchemaService.AuthScope;
-        version?: NSchemaService.Version;
+      [key in NSchemeService.EventKind]?: {
+        scope?: NSchemeService.AuthScope;
+        version?: NSchemeService.Version;
         handler: any;
       };
     };
@@ -75,7 +75,7 @@ export namespace NSchemaLoader {
     T extends Record<string, any> = Record<string, any>
   > = {
     [K in keyof T]: T[K] extends infer I
-      ? NSchemaService.ValidatorHandler<I>
+      ? NSchemeService.ValidatorHandler<I>
       : T[K];
   };
 
@@ -95,7 +95,7 @@ export namespace NSchemaLoader {
     >
   > = {
     [K in keyof T]: T[K] extends (data: infer D, ...args: infer A) => infer R
-      ? NSchemaService.TypeormHandler<S, D>
+      ? NSchemeService.TypeormHandler<S, D>
       : T[K];
   };
 
@@ -107,13 +107,13 @@ export namespace NSchemaLoader {
     >
   > = {
     [K in keyof T]: T[K] extends (data: infer D, ...args: infer A) => infer R
-      ? NSchemaService.MongoHandler<S, D>
+      ? NSchemeService.MongoHandler<S, D>
       : T[K];
   };
 
   export type MongoSchemaStructure<T> = (
-    agents: NSchemaService.Agents
-  ) => NMongoProvider.Schema<T>;
+    agents: NSchemeService.Agents
+  ) => NMongoTunnel.Schema<T>;
 
   export type DocumentsStructure = {
     router?: RouterStructure;
@@ -125,12 +125,12 @@ export namespace NSchemaLoader {
     validator?: ValidatorStructure;
     typeorm?: {
       name: string;
-      schema: NSchemaService.TypeormSchema;
+      schema: NSchemeService.TypeormSchema;
       repository?: TypeormRepositoryStructure;
     };
     mongo?: {
       name: string;
-      schema: MongoSchemaStructure;
+      model: MongoSchemaStructure;
       repository?: MongoRepositoryStructure;
     };
   };

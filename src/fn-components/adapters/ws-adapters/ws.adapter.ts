@@ -1,4 +1,5 @@
 import { https, http, ws, injectable, inject, uuid } from "~packages";
+import { ErrorCodes } from "~common";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { AbstractWsAdapter } from "./abstract.ws-adapter";
@@ -7,16 +8,17 @@ import type {
   Ws,
   Http,
   Https,
-  IDiscoveryService,
+  ISchemeAgent,
   ILoggerService,
+  IDiscoveryService,
   IAbstractWsAdapter,
   NAbstractWsAdapter,
-  IContextService,
   ISchemeService,
+  IContextService,
   NContextService,
   IFunctionalityAgent,
-  ISchemaAgent,
   IIntegrationAgent,
+  IExceptionProvider,
 } from "~types";
 
 @injectable()
@@ -96,7 +98,14 @@ export class WsAdapter
         server = https.createServer();
         break;
       default:
-        throw new Error(`Unsupported protocol - ${protocol}`);
+        throw container
+          .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+          .throwError(`Unsupported protocol - ${protocol}`, {
+            namespace: WsAdapter.name,
+            tag: "Connection",
+            code: ErrorCodes.fn.WsAdapter.UNSUPPORTED_PROTOCOL,
+            errorType: "FATAL",
+          });
     }
 
     try {
@@ -126,7 +135,14 @@ export class WsAdapter
         );
       });
     } catch (e) {
-      throw e;
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError(e, {
+          namespace: WsAdapter.name,
+          tag: "Connection",
+          code: ErrorCodes.fn.WsAdapter.CATCH,
+          errorType: "FATAL",
+        });
     }
   }
 
@@ -228,6 +244,7 @@ export class WsAdapter
           requestId: uuid.v4(),
           version: p.version,
           schema: this._contextService.store.schema,
+          socket: ws,
           type: k,
           language: p.language,
         };
@@ -259,7 +276,7 @@ export class WsAdapter
                   fnAgent: container.get<IFunctionalityAgent>(
                     CoreSymbols.FunctionalityAgent
                   ),
-                  schemaAgent: container.get<ISchemaAgent>(
+                  schemaAgent: container.get<ISchemeAgent>(
                     CoreSymbols.SchemaAgent
                   ),
                   inAgent: container.get<IIntegrationAgent>(
@@ -286,5 +303,7 @@ export class WsAdapter
     this._connections.delete(ws.$__fiber__.connectionId);
     ws.close();
   }
-  private _error(ws: Ws.WebSocket, error: Error) {}
+  private _error(ws: Ws.WebSocket, error: Error) {
+    throw new Error("Method not implemented");
+  }
 }

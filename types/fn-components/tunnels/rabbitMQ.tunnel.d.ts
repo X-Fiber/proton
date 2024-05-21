@@ -1,4 +1,4 @@
-import { NRabbitMQConnector } from "../../connectors";
+import type { NRabbitMQConnector } from "../../connectors";
 
 export interface IRabbitMQTunnel {
   sendToQueue<

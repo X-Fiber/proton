@@ -2,20 +2,20 @@ import { injectable, inject } from "~packages";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 
-import {
+import type {
   Mongoose,
   Nullable,
   UnknownObject,
-  IContextService,
   ICoreError,
+  ISchemeAgent,
+  IMongoTunnel,
+  NMongoTunnel,
+  NSchemeService,
+  IContextService,
+  IMongoConnector,
+  IIntegrationAgent,
   IExceptionProvider,
   IFunctionalityAgent,
-  IIntegrationAgent,
-  IMongoConnector,
-  IMongoTunnel,
-  ISchemaAgent,
-  NMongoProvider,
-  NSchemaService,
 } from "~types";
 
 @injectable()
@@ -27,15 +27,15 @@ export class MongoTunnel implements IMongoTunnel {
     private readonly _contextService: IContextService
   ) {}
 
-  public setModels(fnModels: NMongoProvider.SchemaInfo<unknown>[]) {
+  public setModels(fnModels: NMongoTunnel.SchemaInfo<unknown>[]) {
     const { connection } = this._mongodbConnector;
 
     fnModels.forEach((fn) => {
-      const agents: NSchemaService.Agents = {
+      const agents: NSchemeService.Agents = {
         fnAgent: container.get<IFunctionalityAgent>(
           CoreSymbols.FunctionalityAgent
         ),
-        schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+        schemaAgent: container.get<ISchemeAgent>(CoreSymbols.SchemaAgent),
         inAgent: container.get<IIntegrationAgent>(CoreSymbols.IntegrationAgent),
       };
 
@@ -49,7 +49,7 @@ export class MongoTunnel implements IMongoTunnel {
     });
   }
 
-  public getRepository<S>(): NMongoProvider.Repository<S> {
+  public getRepository<S>(): NMongoTunnel.Repository<S> {
     return {
       create: async <T>(
         model: string,

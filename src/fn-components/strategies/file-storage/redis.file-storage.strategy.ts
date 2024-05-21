@@ -5,11 +5,11 @@ import { CoreSymbols } from "~symbols";
 import { AbstractFileStorageStrategy } from "./abstract.file-storage.strategy";
 
 import type {
-  IDiscoveryService,
+  IRedisTunnel,
   ILoggerService,
+  IDiscoveryService,
   IAbstractFileStorageStrategy,
   NAbstractFileStorageStrategy,
-  IRedisTunnel,
 } from "~types";
 
 // TODO: implement all methods

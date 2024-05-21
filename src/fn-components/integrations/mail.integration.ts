@@ -4,8 +4,8 @@ import { AbstractIntegration } from "./abstract.integration";
 
 import type {
   Nodemailer,
-  IDiscoveryService,
   ILoggerService,
+  IDiscoveryService,
   IMailIntegration,
   NMailIntegration,
 } from "~types";

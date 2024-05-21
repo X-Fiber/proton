@@ -19,7 +19,6 @@ export class TypeormConnector
 {
   private _connection: Typeorm.DataSource | undefined;
   private _config: NTypeormConnector.Config | undefined;
-  private _entities: Map<string, Typeorm.EntitySchema<unknown>> | undefined;
   private _repositories: Map<string, Typeorm.Repository<unknown>>;
 
   constructor(

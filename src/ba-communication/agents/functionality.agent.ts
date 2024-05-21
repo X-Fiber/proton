@@ -3,7 +3,7 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { Guards, Helpers } from "~utils";
 
-import {
+import type {
   AnyFn,
   Jwt,
   Nullable,
@@ -16,8 +16,8 @@ import {
   IValidatorError,
   NFunctionalityAgent,
   NScramblerService,
-  NSchemaService,
-  NPermissionService,
+  NSchemeService,
+  NPermissionProvider,
   IRouteException,
   IContextService,
   NExceptionProvider,
@@ -201,7 +201,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
 
   public get exception(): NFunctionalityAgent.Exception {
     return {
-      validation: (errors: NSchemaService.ValidateErrors): IValidatorError => {
+      validation: (errors: NSchemeService.ValidateErrors): IValidatorError => {
         return container
           .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
           .throwValidation(errors);
@@ -269,7 +269,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
     return {
       createRole: async <
         R extends string = string,
-        I extends NPermissionService.RoleInfo = NPermissionService.RoleInfo
+        I extends NPermissionProvider.RoleInfo = NPermissionProvider.RoleInfo
       >(
         role: R,
         info: I
@@ -278,7 +278,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       getRoleRoutes: async <
         R extends string = string,
-        RU extends NPermissionService.Routes = NPermissionService.Routes
+        RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
       >(
         role: R
       ): Promise<Nullable<RU>> => {
@@ -286,7 +286,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       getRoleEvents: async <
         R extends string = string,
-        EV extends NPermissionService.Events = NPermissionService.Events
+        EV extends NPermissionProvider.Events = NPermissionProvider.Events
       >(
         role: R
       ): Promise<Nullable<EV>> => {
@@ -307,7 +307,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       addRoute: async <
         RO extends string = string,
-        RU extends NPermissionService.Routes = NPermissionService.Routes
+        RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
       >(
         role: RO,
         routes: RU
@@ -316,7 +316,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       removeRoute: async <
         R extends string = string,
-        RU extends NPermissionService.Routes = NPermissionService.Routes
+        RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
       >(
         role: R,
         routes: RU
@@ -325,7 +325,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       addEvent: async <
         R extends string = string,
-        EV extends NPermissionService.Events = NPermissionService.Events
+        EV extends NPermissionProvider.Events = NPermissionProvider.Events
       >(
         role: R,
         events: EV
@@ -334,7 +334,7 @@ export class FunctionalityAgent implements IFunctionalityAgent {
       },
       removeEvent: async <
         E extends string = string,
-        EV extends NPermissionService.Events = NPermissionService.Events
+        EV extends NPermissionProvider.Events = NPermissionProvider.Events
       >(
         role: E,
         events: EV

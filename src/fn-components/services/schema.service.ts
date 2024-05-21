@@ -6,33 +6,33 @@ import { Guards } from "~utils";
 
 import { AbstractService } from "./abstract.service";
 
-import {
+import type {
   Typeorm,
-  IDiscoveryService,
+  FnObject,
+  AnyObject,
+  AnyFunction,
+  ExtendedRecordObject,
+  IMongoTunnel,
+  ITypeormTunnel,
+  IContextService,
+  IIntegrationAgent,
+  IFunctionalityAgent,
+  ISchemeAgent,
+  NSchemaAgent,
   ILoggerService,
-  ISchemaLoader,
+  ISchemeLoader,
   NSchemaLoader,
   ISchemeService,
-  NSchemaService,
+  NSchemeService,
+  IDiscoveryService,
   NAbstractService,
-  IContextService,
-  AnyFunction,
-  IFunctionalityAgent,
-  FnObject,
-  ISchemaAgent,
-  IIntegrationAgent,
-  ITypeormTunnel,
-  AnyObject,
-  ExtendedRecordObject,
-  NSchemaAgent,
-  IMongoTunnel,
 } from "~types";
 
 @injectable()
-export class SchemaService extends AbstractService implements ISchemeService {
-  protected readonly _SERVICE_NAME = SchemaService.name;
-  private _config: NSchemaService.Config | undefined;
-  private _SCHEMA: NSchemaService.BusinessScheme | undefined;
+export class SchemeService extends AbstractService implements ISchemeService {
+  protected readonly _SERVICE_NAME = SchemeService.name;
+  private _config: NSchemeService.Config | undefined;
+  private _SCHEMA: NSchemeService.BusinessScheme | undefined;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
@@ -40,26 +40,26 @@ export class SchemaService extends AbstractService implements ISchemeService {
     @inject(CoreSymbols.LoggerService)
     protected readonly _loggerService: ILoggerService,
     @inject(CoreSymbols.SchemaLoader)
-    private readonly _schemaLoader: ISchemaLoader,
+    private readonly _schemaLoader: ISchemeLoader,
     @inject(CoreSymbols.ContextService)
     private readonly _contextService: IContextService
   ) {
     super();
   }
 
-  public get typeormSchemas(): NSchemaService.TypeormEntities {
-    const entities: NSchemaService.TypeormEntities = new Map<
+  public get typeormSchemas(): NSchemeService.TypeormEntities {
+    const entities: NSchemeService.TypeormEntities = new Map<
       string,
       Typeorm.EntitySchema<unknown>
     >();
     this.schema.forEach((domains) => {
       domains.forEach((storage, domain) => {
         if (storage.typeorm) {
-          const agents: NSchemaService.Agents = {
+          const agents: NSchemeService.Agents = {
             fnAgent: container.get<IFunctionalityAgent>(
               CoreSymbols.FunctionalityAgent
             ),
-            schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+            schemaAgent: container.get<ISchemeAgent>(CoreSymbols.SchemaAgent),
             inAgent: container.get<IIntegrationAgent>(
               CoreSymbols.IntegrationAgent
             ),
@@ -95,7 +95,7 @@ export class SchemaService extends AbstractService implements ISchemeService {
   }
 
   public on(
-    event: NSchemaService.Events,
+    event: NSchemeService.Events,
     listener: NAbstractService.Listener
   ): void {
     this._emitter.on(event, listener);
@@ -128,7 +128,7 @@ export class SchemaService extends AbstractService implements ISchemeService {
     this._emitter.removeAllListeners();
   }
 
-  public get schema(): NSchemaService.BusinessScheme {
+  public get schema(): NSchemeService.BusinessScheme {
     if (!this._SCHEMA) {
       throw new Error("Services collection not initialize.");
     }
@@ -190,7 +190,7 @@ export class SchemaService extends AbstractService implements ISchemeService {
 
   public getAnotherValidator<T extends Record<string, AnyObject>>(
     name: string
-  ): NSchemaService.ValidatorStructure<T> {
+  ): NSchemeService.ValidatorStructure<T> {
     const store = this._contextService.store;
 
     const service = store.schema.get(store.service);
@@ -208,9 +208,9 @@ export class SchemaService extends AbstractService implements ISchemeService {
     }
 
     class Validator {
-      private readonly _handlers: Map<string, NSchemaService.ValidatorHandler>;
+      private readonly _handlers: Map<string, NSchemeService.ValidatorHandler>;
 
-      constructor(handlers: Map<string, NSchemaService.ValidatorHandler>) {
+      constructor(handlers: Map<string, NSchemeService.ValidatorHandler>) {
         this._handlers = handlers;
 
         for (const [name] of this._handlers) {
@@ -225,13 +225,11 @@ export class SchemaService extends AbstractService implements ISchemeService {
       private _runMethod(name: string, args: any[]): any {
         const handler = this._handlers.get(name);
 
-        const schemaAgent = container.get<ISchemaAgent>(
+        const schemaAgent = container.get<ISchemeAgent>(
           CoreSymbols.SchemaAgent
         );
 
         const localization: NSchemaAgent.Localization = {
-          getDictionary: "",
-          getAnotherDictionary: "",
           getResource: schemaAgent.getResource,
           getAnotherResource: schemaAgent.getAnotherResource,
         };
@@ -242,12 +240,12 @@ export class SchemaService extends AbstractService implements ISchemeService {
 
     return new Validator(
       validators
-    ) as unknown as NSchemaService.ValidatorStructure<T>;
+    ) as unknown as NSchemeService.ValidatorStructure<T>;
   }
 
   public getValidator<
     T extends Record<string, AnyObject>
-  >(): NSchemaService.ValidatorStructure<T> {
+  >(): NSchemeService.ValidatorStructure<T> {
     return this.getAnotherValidator<T>(this._contextService.store.domain);
   }
 
@@ -286,11 +284,11 @@ export class SchemaService extends AbstractService implements ISchemeService {
       private _runMethod(method: string, ...args: any[]): any {
         const handler = this._handlers.get(method);
         if (handler && domain && domain.typeorm) {
-          const agents: NSchemaService.Agents = {
+          const agents: NSchemeService.Agents = {
             fnAgent: container.get<IFunctionalityAgent>(
               CoreSymbols.FunctionalityAgent
             ),
-            schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+            schemaAgent: container.get<ISchemeAgent>(CoreSymbols.SchemaAgent),
             inAgent: container.get<IIntegrationAgent>(
               CoreSymbols.IntegrationAgent
             ),

@@ -1,13 +1,12 @@
-import { Express, Fastify } from "../../packages";
-import { HttpMethod, ModeObject, StringObject } from "../utils";
-import {
+import type { Express, Fastify } from "../../packages";
+import type { HttpMethod, ModeObject, StringObject } from "../utils";
+import type { NAbstractFileStorageStrategy } from "../strategies";
+import type {
   NContextService,
   NDiscoveryService,
-  NSchemaService,
+  NSchemeService,
   NStreamService,
 } from "../services";
-import { AuthScope } from "../services/schema.service";
-import { NAbstractFileStorageStrategy } from "../strategies";
 
 export interface IAbstractHttpAdapter {
   start(): Promise<void>;
@@ -23,7 +22,7 @@ export namespace NAbstractHttpAdapter {
 
   type StorageSuccess = {
     type: "success";
-    domain: NSchemaService.Domain;
+    domain: NSchemeService.Domain;
   };
 
   type StorageFail = {
@@ -107,7 +106,10 @@ export namespace NAbstractHttpAdapter {
     url: string;
   }
 
-  export type Response<BODY = never, HEADERS extends StringObject = never> =
+  export type Response<
+    BODY = any,
+    HEADERS extends StringObject = StringObject
+  > =
     | BaseResponse<HEADERS>
     | JsonResponse<BODY, HEADERS>
     | RedirectResponse<HEADERS>;
@@ -115,7 +117,7 @@ export namespace NAbstractHttpAdapter {
   export type Context<
     USER_INFO = any,
     SYSTEM_INFO = any,
-    AUTH_SCOPE extends NSchemaService.AuthScope = NSchemaService.AuthScope
+    AUTH_SCOPE extends NSchemeService.AuthScope = NSchemeService.AuthScope
   > = {
     store: NContextService.RouteStore;
   } & (AUTH_SCOPE extends "public:route"
@@ -133,13 +135,13 @@ export namespace NAbstractHttpAdapter {
 
   export type ApiHandler = (
     request: ApiRequest<any, any, any, any>,
-    agents: NSchemaService.Agents,
+    agents: NSchemeService.Agents,
     context: Context
   ) => Promise<Response<any, any, any> | void>;
 
   export type StreamHandler = (
     request: StreamRequest<any, any, any, any>,
-    agents: NSchemaService.Agents,
+    agents: NSchemeService.Agents,
     context: Context
   ) => Promise<Response<any, any, any> | void>;
 }

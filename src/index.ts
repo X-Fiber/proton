@@ -12,5 +12,5 @@ const setServices = (services: NSchemaLoader.ServiceStructure[]): void => {
   SCHEMA_SERVICES.push(...services);
 };
 
-const serverInitiator = container.get<IInitiator>(CoreSymbols.Initiator);
-export { serverInitiator, setServices };
+const initiator = container.get<IInitiator>(CoreSymbols.Initiator);
+export { initiator, setServices };

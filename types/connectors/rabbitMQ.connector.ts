@@ -1,10 +1,10 @@
-import { RabbitMQ } from "../packages";
-import {
+import type { RabbitMQ } from "../packages";
+import type {
   NContextService,
   NDiscoveryService,
-  NSchemaService,
+  NSchemeService,
 } from "../fn-components";
-import { IAbstractConnector } from "./abstract.connector";
+import type { IAbstractConnector } from "./abstract.connector";
 
 export interface IRabbitMQConnector extends IAbstractConnector {
   readonly connection: RabbitMQ.Connection;
@@ -34,7 +34,7 @@ export namespace NRabbitMQConnector {
 
   export type Handler = (
     msg: RabbitMQ.Message,
-    agents: NSchemaService.Agents,
+    agents: NSchemeService.Agents,
     context: Context
   ) => Promise<void>;
 

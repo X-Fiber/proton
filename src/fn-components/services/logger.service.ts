@@ -6,9 +6,9 @@ import { AbstractService } from "./abstract.service";
 
 import type {
   Winston,
-  IDiscoveryService,
   ILoggerService,
   NLoggerService,
+  IDiscoveryService,
 } from "~types";
 
 @injectable()
@@ -219,7 +219,9 @@ export class LoggerService extends AbstractService implements ILoggerService {
   }
 
   public schema(msg: string, options?: NLoggerService.CoreSchemaOptions): void {
-    throw new Error("Method not implemented");
+    console.log(msg);
+
+    // throw new Error("Method not implemented");
   }
 
   public verbose(
@@ -265,7 +267,7 @@ export class LoggerService extends AbstractService implements ILoggerService {
     msg: string,
     options: NLoggerService.SchemaDebugOptions
   ): void {
-    throw new Error("Method not implemented");
+    console.debug(msg);
   }
 
   private get _consoleCoreTransport() {

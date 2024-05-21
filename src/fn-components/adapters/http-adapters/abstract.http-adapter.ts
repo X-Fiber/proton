@@ -1,27 +1,27 @@
 import { injectable, uuid } from "~packages";
-import { ResponseType, SchemaHeaders, StatusCode } from "~common";
-
-import {
-  UnknownObject,
-  IContextService,
-  IDiscoveryService,
-  ILoggerService,
-  IAbstractHttpAdapter,
-  NAbstractHttpAdapter,
-  ISchemeService,
-  NContextService,
-  Fastify,
-  type IFunctionalityAgent,
-  type ISchemaAgent,
-  type IIntegrationAgent,
-  NSchemaService,
-  type ISessionProvider,
-  type NScramblerService,
-  IScramblerService,
-} from "~types";
+import { ErrorCodes, ResponseType, StatusCode } from "~common";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 import { Helpers } from "~utils";
+
+import type {
+  Fastify,
+  UnknownObject,
+  IDiscoveryService,
+  ILoggerService,
+  IContextService,
+  NContextService,
+  IAbstractHttpAdapter,
+  NAbstractHttpAdapter,
+  IFunctionalityAgent,
+  ISchemeService,
+  NSchemeService,
+  ISessionProvider,
+  IScramblerService,
+  NScramblerService,
+  ISchemeAgent,
+  IIntegrationAgent,
+} from "~types";
 
 @injectable()
 export abstract class AbstractHttpAdapter<
@@ -58,7 +58,7 @@ export abstract class AbstractHttpAdapter<
       return {
         type: "fail",
         message: this._buildApiMessage(
-          "0001.0001",
+          ErrorCodes.fn.HttpAdapter.SERVICE_NOT_FOUND,
           `Service '${sStorage}' not found. Supported services: ${Array.from(
             this._schemaService.schema.keys()
           )}`
@@ -71,7 +71,7 @@ export abstract class AbstractHttpAdapter<
       return {
         type: "fail",
         message: this._buildApiMessage(
-          "0001.0002",
+          ErrorCodes.fn.HttpAdapter.DOMAIN_NOT_FOUND,
           `Domain '${domain}' not found in '${sStorage}' service. Supported domains: ${Array.from(
             sStorage.keys()
           )}`
@@ -106,7 +106,7 @@ export abstract class AbstractHttpAdapter<
 
   protected _getHeaders(
     reqHhs: Record<string, string>,
-    hhs: NSchemaService.HeaderParams[] | null,
+    hhs: NSchemeService.HeaderParams[] | null,
     res: Fastify.Response
   ) {
     let headers: Record<string, string | null> = {};
@@ -114,7 +114,7 @@ export abstract class AbstractHttpAdapter<
       headers = hhs.reduce(
         (
           acc: { [key: string]: string | null },
-          header: NSchemaService.HeaderParams
+          header: NSchemeService.HeaderParams
         ) => {
           const h: string | null = reqHhs[header.name];
           switch (header.scope) {
@@ -124,7 +124,7 @@ export abstract class AbstractHttpAdapter<
                   .status(StatusCode.BAD_REQUEST)
                   .send(
                     this._buildApiMessage(
-                      "0001.0004",
+                      ErrorCodes.fn.HttpAdapter.HEADER_IS_REQUIRED,
                       `Header '${header.name}' is required`
                     )
                   );
@@ -147,7 +147,7 @@ export abstract class AbstractHttpAdapter<
 
   protected _getParams(
     param: { "*": string },
-    aParams: NSchemaService.RouteParams[] | null,
+    aParams: NSchemeService.RouteParams[] | null,
     res: Fastify.Response
   ) {
     let params: Record<string, string | null> = {};
@@ -171,7 +171,7 @@ export abstract class AbstractHttpAdapter<
       params = aParams.reduce(
         (
           acc: Record<string, string | null>,
-          param: NSchemaService.RouteParams
+          param: NSchemeService.RouteParams
         ) => {
           const parameter = obj[param.name];
           switch (parameter.scope) {
@@ -181,7 +181,7 @@ export abstract class AbstractHttpAdapter<
                   .status(StatusCode.BAD_REQUEST)
                   .send(
                     this._buildApiMessage(
-                      "0001.0004",
+                      ErrorCodes.fn.HttpAdapter.DYNAMIC_PARAM_IS_REQUIRED,
                       `Header '${param.name}' is required`
                     )
                   );
@@ -204,7 +204,7 @@ export abstract class AbstractHttpAdapter<
 
   protected async _getContext(
     store: NContextService.RouteStore,
-    scope: NSchemaService.AuthScope,
+    scope: NSchemeService.AuthScope,
     req: Fastify.Request,
     res: Fastify.Response
   ): Promise<NAbstractHttpAdapter.Context> {
@@ -227,6 +227,7 @@ export abstract class AbstractHttpAdapter<
           return res.status(StatusCode.FORBIDDEN).send({
             responseType: ResponseType.AUTHENTICATED,
             data: {
+              code: ErrorCodes.fn.HttpAdapter.MISSED_AUTH_TOKEN,
               message: "Missed user access token",
             },
           });
@@ -247,6 +248,7 @@ export abstract class AbstractHttpAdapter<
           return res.status(StatusCode.FORBIDDEN).send({
             responseType: ResponseType.AUTHENTICATED,
             data: {
+              code: ErrorCodes.fn.HttpAdapter.MISSED_AUTH_TOKEN,
               message: "Missed user access token",
             },
           });
@@ -267,12 +269,12 @@ export abstract class AbstractHttpAdapter<
     return context;
   }
 
-  protected _getAgents(): NSchemaService.Agents {
+  protected _getAgents(): NSchemeService.Agents {
     return {
       fnAgent: container.get<IFunctionalityAgent>(
         CoreSymbols.FunctionalityAgent
       ),
-      schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+      schemaAgent: container.get<ISchemeAgent>(CoreSymbols.SchemaAgent),
       inAgent: container.get<IIntegrationAgent>(CoreSymbols.IntegrationAgent),
     };
   }

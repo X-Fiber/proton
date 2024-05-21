@@ -1,2 +1,2 @@
-export * from "./abstract.factory";
-export * from "./file-storage.factory";
+export type * from "./abstract.factory";
+export type * from "./file-storage.factory";

@@ -1,9 +1,9 @@
 import { injectable } from "~packages";
 
 import type {
-  IAbstractWsAdapter,
-  IDiscoveryService,
   ILoggerService,
+  IDiscoveryService,
+  IAbstractWsAdapter,
   NAbstractWsAdapter,
 } from "~types";
 

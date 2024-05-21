@@ -1,4 +1,4 @@
-export * from './functionality.agent';
-export * from './schema.agent';
-export * from './base-operation.agent';
-export * from './integration.agent';
+export type * from "./functionality.agent";
+export type * from "./schema.agent";
+export type * from "./base-operation.agent";
+export type * from "./integration.agent";

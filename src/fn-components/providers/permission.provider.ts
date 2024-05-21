@@ -3,13 +3,13 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 
 import type {
-  HttpMethod,
   Nullable,
-  IDiscoveryService,
+  HttpMethod,
   IRedisTunnel,
   ILoggerService,
+  IDiscoveryService,
   IPermissionProvider,
-  NPermissionService,
+  NPermissionProvider,
 } from "~types";
 
 @injectable()
@@ -23,7 +23,7 @@ export class PermissionProvider implements IPermissionProvider {
 
   public async createRole(
     role: string,
-    info: NPermissionService.RoleInfo
+    info: NPermissionProvider.RoleInfo
   ): Promise<void> {
     const provider = container.get<IRedisTunnel>(CoreSymbols.RedisTunnel);
 
@@ -45,7 +45,7 @@ export class PermissionProvider implements IPermissionProvider {
 
   public async getRoleRoutes<
     R extends string = string,
-    RU extends NPermissionService.Routes = NPermissionService.Routes
+    RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
   >(role: R): Promise<RU | null> {
     try {
       const structures = await container
@@ -54,7 +54,7 @@ export class PermissionProvider implements IPermissionProvider {
 
       if (!structures) return null;
 
-      const routes: NPermissionService.Routes = structures.map((r) => {
+      const routes: NPermissionProvider.Routes = structures.map((r) => {
         const chunks = r.split("-");
         return {
           route: chunks[0],
@@ -70,7 +70,7 @@ export class PermissionProvider implements IPermissionProvider {
 
   public async getRoleEvents<
     R extends string = string,
-    EV extends NPermissionService.Events = NPermissionService.Events
+    EV extends NPermissionProvider.Events = NPermissionProvider.Events
   >(role: R): Promise<Nullable<EV>> {
     try {
       const structures = await container
@@ -125,8 +125,8 @@ export class PermissionProvider implements IPermissionProvider {
   public async addRoute(
     role: string,
     routes:
-      | NPermissionService.RouteStructure
-      | NPermissionService.RouteStructure[]
+      | NPermissionProvider.RouteStructure
+      | NPermissionProvider.RouteStructure[]
   ): Promise<void> {
     let records: string[];
 
@@ -148,8 +148,8 @@ export class PermissionProvider implements IPermissionProvider {
   public async removeRoute(
     role: string,
     routes:
-      | NPermissionService.RouteStructure
-      | NPermissionService.RouteStructure[]
+      | NPermissionProvider.RouteStructure
+      | NPermissionProvider.RouteStructure[]
   ): Promise<void> {
     let records: string[];
 
@@ -171,8 +171,8 @@ export class PermissionProvider implements IPermissionProvider {
   public async addEvent(
     role: string,
     events:
-      | NPermissionService.EventsStructure
-      | NPermissionService.EventsStructure[]
+      | NPermissionProvider.EventsStructure
+      | NPermissionProvider.EventsStructure[]
   ): Promise<void> {
     let records: string[];
 
@@ -194,8 +194,8 @@ export class PermissionProvider implements IPermissionProvider {
   public async removeEvent(
     role: string,
     events:
-      | NPermissionService.EventsStructure
-      | NPermissionService.EventsStructure[]
+      | NPermissionProvider.EventsStructure
+      | NPermissionProvider.EventsStructure[]
   ): Promise<void> {
     let records: string[];
 

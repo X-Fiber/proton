@@ -1,20 +1,20 @@
 import { injectable } from "~packages";
 import { ResponseType, StatusCode } from "~common";
 
-import {
+import type {
   UTCDate,
   ICoreError,
-  IExceptionProvider,
-  IValidatorError,
-  NExceptionProvider,
-  NSchemaService,
+  NSchemeService,
   IRouteException,
+  IValidatorError,
+  IExceptionProvider,
+  NExceptionProvider,
 } from "~types";
 
 class ValidatorError extends Error implements IValidatorError {
-  public readonly errors: NSchemaService.ValidateErrors;
+  public readonly errors: NSchemeService.ValidateErrors;
 
-  constructor(message: string, errors: NSchemaService.ValidateErrors) {
+  constructor(message: string, errors: NSchemeService.ValidateErrors) {
     super(message);
 
     this.errors = errors;
@@ -82,7 +82,7 @@ class CoreError extends Error implements ICoreError {
 @injectable()
 export class ExceptionProvider implements IExceptionProvider {
   public throwValidation(
-    errors: NSchemaService.ValidateErrors
+    errors: NSchemeService.ValidateErrors
   ): IValidatorError {
     return new ValidatorError("Validation error", errors);
   }

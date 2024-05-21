@@ -1,24 +1,24 @@
 import { inject, injectable } from "~packages";
 import { CoreSymbols } from "~symbols";
 
-import {
+import type {
   AnyObject,
   ExtendedRecordObject,
   FnObject,
-  ISchemaAgent,
+  ISchemeAgent,
   ISchemeService,
   KeyStringLiteralBuilder,
-  NSchemaService,
+  NSchemeService,
 } from "~types";
 
 @injectable()
-export class SchemaAgent implements ISchemaAgent {
+export class SchemaAgent implements ISchemeAgent {
   constructor(
     @inject(CoreSymbols.SchemeService)
     private readonly _schemaService: ISchemeService
   ) {}
 
-  public get schema(): NSchemaService.BusinessScheme {
+  public get schema(): NSchemeService.BusinessScheme {
     return this._schemaService.schema;
   }
 
@@ -34,13 +34,13 @@ export class SchemaAgent implements ISchemaAgent {
 
   public getAnotherValidator<T extends Record<string, AnyObject>>(
     name: string
-  ): NSchemaService.ValidatorStructure<T> {
+  ): NSchemeService.ValidatorStructure<T> {
     return this._schemaService.getAnotherValidator(name);
   }
 
   public getValidator<
     T extends Record<string, AnyObject>
-  >(): NSchemaService.ValidatorStructure<T> {
+  >(): NSchemeService.ValidatorStructure<T> {
     return this._schemaService.getValidator();
   }
 
@@ -57,9 +57,7 @@ export class SchemaAgent implements ISchemaAgent {
   public getDictionary<L extends string, E extends ExtendedRecordObject>(
     language: L
   ): E {
-    // return this._schemaService<E>(service, domain, language);
-
-    return "" as E;
+    throw new Error("Method not implemented");
   }
 
   public getAnotherDictionary<
@@ -67,9 +65,7 @@ export class SchemaAgent implements ISchemaAgent {
     L extends string,
     E extends ExtendedRecordObject
   >(domain: D, language: E): E {
-    // return this._schemaService<E>(service, domain, language);
-
-    return "" as E;
+    throw new Error("Method not implemented");
   }
 
   public getAnotherResource<

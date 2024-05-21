@@ -1,26 +1,33 @@
-import { injectable } from "~packages";
+import { injectable, inject } from "~packages";
+import { CoreSymbols } from "~symbols";
 
-import {
+import type {
   AnyFn,
   HttpMethod,
   ExtendedRecordObject,
-  ISchemaLoader,
+  ISchemeLoader,
   NSchemaLoader,
-  NSchemaService,
+  NSchemeService,
   NRabbitMQConnector,
+  ILoggerService,
 } from "~types";
 
 @injectable()
-export class SchemaLoader implements ISchemaLoader {
-  private _SCHEME: NSchemaService.BusinessScheme | undefined;
-  private _DOMAINS: NSchemaService.Service | undefined;
+export class SchemeLoader implements ISchemeLoader {
+  private _SCHEME: NSchemeService.BusinessScheme | undefined;
+  private _DOMAINS: NSchemeService.Service | undefined;
+
+  constructor(
+    @inject(CoreSymbols.LoggerService)
+    private readonly _loggerService: ILoggerService
+  ) {}
 
   public async init(): Promise<void> {
-    this._SCHEME = new Map<string, NSchemaService.Service>();
-    this._DOMAINS = new Map<string, NSchemaService.Domain>();
+    this._SCHEME = new Map<string, NSchemeService.Service>();
+    this._DOMAINS = new Map<string, NSchemeService.Domain>();
   }
 
-  public get services(): NSchemaService.BusinessScheme {
+  public get services(): NSchemeService.BusinessScheme {
     if (!this._SCHEME) {
       throw new Error("Services map not initialize");
     }
@@ -33,7 +40,7 @@ export class SchemaLoader implements ISchemaLoader {
     this._SCHEME = undefined;
   }
 
-  private get _domains(): NSchemaService.Service {
+  private get _domains(): NSchemeService.Service {
     if (!this._DOMAINS) {
       throw new Error("Domains map not initialize");
     }
@@ -89,14 +96,14 @@ export class SchemaLoader implements ISchemaLoader {
           this._setMongoSchema(
             name,
             documents.mongo.name,
-            documents.mongo.schema
+            documents.mongo.model
           );
 
           if (documents.mongo.repository) {
             this._setMongoRepository(
               name,
               documents.mongo.name,
-              documents.mongo.schema,
+              documents.mongo.model,
               documents.mongo.repository
             );
           }
@@ -145,6 +152,10 @@ export class SchemaLoader implements ISchemaLoader {
               `Route "${path}" with http method "${method}" has been exists in domain "${domain}"`
             );
           }
+
+          this._loggerService.schema(
+            `Route "${name}" with method ${method} has been register`
+          );
 
           storage.routes.set(name, {
             path: path,
@@ -234,7 +245,7 @@ export class SchemaLoader implements ISchemaLoader {
 
       const kinds = structure[path];
       for (const k in kinds) {
-        const kind = k as NSchemaService.EventKind;
+        const kind = k as NSchemeService.EventKind;
 
         const event = kinds[kind];
         if (event) {
@@ -334,7 +345,7 @@ export class SchemaLoader implements ISchemaLoader {
 
   private _setValidator(
     domain: string,
-    structure: NSchemaService.ValidatorStructure
+    structure: NSchemeService.ValidatorStructure
   ): void {
     const storage = this._domains.get(domain);
     if (!storage) {
@@ -352,7 +363,7 @@ export class SchemaLoader implements ISchemaLoader {
   private _setMongoSchema<T>(
     domain: string,
     name: string,
-    schema: NSchemaService.MongoSchema
+    schema: NSchemeService.MongoSchema
   ): void {
     const storage = this._domains.get(domain);
     if (!storage) {
@@ -365,7 +376,7 @@ export class SchemaLoader implements ISchemaLoader {
       storage.mongo = {
         name: name,
         schema: schema,
-        repository: new Map<string, NSchemaService.MongoHandler>(),
+        repository: new Map<string, NSchemeService.MongoHandler>(),
       };
     } else {
       storage.mongo.schema = schema;
@@ -375,7 +386,7 @@ export class SchemaLoader implements ISchemaLoader {
   private _setMongoRepository<T extends string = string>(
     domain: string,
     name: string,
-    schema: NSchemaService.MongoSchema,
+    schema: NSchemeService.MongoSchema,
     repository: NSchemaLoader.MongoRepositoryStructure
   ): void {
     const storage = this._domains.get(domain);
@@ -389,7 +400,7 @@ export class SchemaLoader implements ISchemaLoader {
       storage.mongo = {
         name: name,
         schema: schema,
-        repository: new Map<string, NSchemaService.MongoHandler>(),
+        repository: new Map<string, NSchemeService.MongoHandler>(),
       };
     }
 
@@ -402,7 +413,7 @@ export class SchemaLoader implements ISchemaLoader {
   private _setTypeormSchema<T>(
     domain: string,
     name: string,
-    schema: NSchemaService.TypeormSchema
+    schema: NSchemeService.TypeormSchema
   ): void {
     const storage = this._domains.get(domain);
     if (!storage) {
@@ -415,7 +426,7 @@ export class SchemaLoader implements ISchemaLoader {
       storage.typeorm = {
         name: name,
         schema: schema,
-        repository: new Map<string, NSchemaService.TypeormHandler>(),
+        repository: new Map<string, NSchemeService.TypeormHandler>(),
       };
     } else {
       storage.typeorm.schema = schema;
@@ -425,7 +436,7 @@ export class SchemaLoader implements ISchemaLoader {
   private _setTypeormRepository<T extends string = string>(
     domain: string,
     name: string,
-    schema: NSchemaService.TypeormSchema,
+    schema: NSchemeService.TypeormSchema,
     repository: NSchemaLoader.TypeormRepositoryStructure
   ): void {
     const storage = this._domains.get(domain);
@@ -439,7 +450,7 @@ export class SchemaLoader implements ISchemaLoader {
       storage.typeorm = {
         name: name,
         schema: schema,
-        repository: new Map<string, NSchemaService.TypeormHandler>(),
+        repository: new Map<string, NSchemeService.TypeormHandler>(),
       };
     }
 
@@ -452,7 +463,7 @@ export class SchemaLoader implements ISchemaLoader {
   private _applyDomainToService(service: string, domain: string): void {
     const sStorage = this.services.get(service);
     if (!sStorage) {
-      this.services.set(service, new Map<string, NSchemaService.Domain>());
+      this.services.set(service, new Map<string, NSchemeService.Domain>());
       this._applyDomainToService(service, domain);
       return;
     }
@@ -467,13 +478,13 @@ export class SchemaLoader implements ISchemaLoader {
 
   private _setDomain(domain: string): void {
     this._domains.set(domain, {
-      routes: new Map<string, NSchemaService.Route>(),
-      events: new Map<string, NSchemaService.Event>(),
+      routes: new Map<string, NSchemeService.Route>(),
+      events: new Map<string, NSchemeService.Event>(),
       broker: new Map<string, NRabbitMQConnector.Topic>(),
-      streams: new Map<string, NSchemaService.Stream>(),
+      streams: new Map<string, NSchemeService.Stream>(),
       helper: new Map<string, AnyFn>(),
       dictionaries: new Map<string, ExtendedRecordObject>(),
-      validator: new Map<string, NSchemaService.ValidatorHandler>(),
+      validator: new Map<string, NSchemeService.ValidatorHandler>(),
     });
   }
 }

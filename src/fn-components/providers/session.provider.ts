@@ -3,15 +3,15 @@ import { container } from "~container";
 import { CoreSymbols } from "~symbols";
 
 import type {
+  ICoreError,
+  UnknownObject,
   IRedisTunnel,
+  ILoggerService,
   ISessionProvider,
   NSessionProvider,
   IScramblerService,
   IExceptionProvider,
   IContextService,
-  ICoreError,
-  ILoggerService,
-  UnknownObject,
 } from "~types";
 
 @injectable()

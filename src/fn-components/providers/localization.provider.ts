@@ -3,11 +3,11 @@ import { CoreSymbols } from "~symbols";
 import { Guards } from "~utils";
 
 import type {
-  IDiscoveryService,
   ILoggerService,
+  ISchemeService,
+  IDiscoveryService,
   ILocalizationProvider,
   ExtendedRecordObject,
-  ISchemeService,
 } from "~types";
 
 @injectable()

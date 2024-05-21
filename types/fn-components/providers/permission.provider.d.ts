@@ -1,22 +1,22 @@
-import { HttpMethod, Nullable } from "../utils";
+import type { HttpMethod, Nullable } from "../utils";
 
 export interface IPermissionProvider {
   createRole<
     R extends string = string,
-    I extends NPermissionService.RoleInfo = NPermissionService.RoleInfo
+    I extends NPermissionProvider.RoleInfo = NPermissionProvider.RoleInfo
   >(
     role: R,
     info: I
   ): Promise<void>;
   getRoleRoutes<
     R extends string = string,
-    RU extends NPermissionService.Routes = NPermissionService.Routes
+    RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
   >(
     role: R
   ): Promise<Nullable<RU>>;
   getRoleEvents<
     R extends string = string,
-    EV extends NPermissionService.Events = NPermissionService.Events
+    EV extends NPermissionProvider.Events = NPermissionProvider.Events
   >(
     role: R
   ): Promise<Nullable<EV>>;
@@ -25,35 +25,35 @@ export interface IPermissionProvider {
   clearRoleEvents<R extends string = string>(role: R): Promise<void>;
   addRoute<
     RO extends string = string,
-    RU extends NPermissionService.Routes = NPermissionService.Routes
+    RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
   >(
     role: RO,
     routes: RU
   ): Promise<void>;
   removeRoute<
     R extends string = string,
-    RU extends NPermissionService.Routes = NPermissionService.Routes
+    RU extends NPermissionProvider.Routes = NPermissionProvider.Routes
   >(
     role: R,
     routes: RU
   ): Promise<void>;
   addEvent<
     E extends string = string,
-    EV extends NPermissionService.Events = NPermissionService.Events
+    EV extends NPermissionProvider.Events = NPermissionProvider.Events
   >(
     role: E,
     events: EV
   ): Promise<void>;
   removeEvent<
     E extends string = string,
-    EV extends NPermissionService.Events = NPermissionService.Events
+    EV extends NPermissionProvider.Events = NPermissionProvider.Events
   >(
     role: E,
     events: EV
   ): Promise<void>;
 }
 
-export namespace NPermissionService {
+export namespace NPermissionProvider {
   export type RouteStructure<R extends string = string> = {
     method: HttpMethod;
     route: R;

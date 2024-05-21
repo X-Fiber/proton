@@ -1,12 +1,12 @@
-import { Mongoose } from "../packages/packages";
-import { NSchemaService } from "../services";
+import type { Mongoose } from "../packages/packages";
+import type { NSchemeService } from "../services";
 
 export interface IMongoTunnel {
-  setModels(models: NMongoProvider.SchemaInfo[]): void;
-  getRepository<S>(): NMongoProvider.Repository<S>;
+  setModels(models: NMongoTunnel.SchemaInfo[]): void;
+  getRepository<S>(): NMongoTunnel.Repository<S>;
 }
 
-export namespace NMongoProvider {
+export namespace NMongoTunnel {
   export type Repository<P> = {
     create: IMongoTunnel["create"];
     insertMany: IMongoTunnel["insertMany"];
@@ -40,5 +40,5 @@ export namespace NMongoProvider {
     model: string;
     getSchema: SchemaFn<T>;
   };
-  export type SchemaFn<T> = (agents: NSchemaService.Agents) => Schema<T>;
+  export type SchemaFn<T> = (agents: NSchemeService.Agents) => Schema<T>;
 }

@@ -1,7 +1,7 @@
 import { injectable, inject } from "~packages";
 import { CoreSymbols } from "~symbols";
 
-import {
+import type {
   IMailIntegration,
   NMailIntegration,
   IIntegrationAgent,

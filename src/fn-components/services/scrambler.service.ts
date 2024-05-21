@@ -5,8 +5,8 @@ import { AbstractService } from "./abstract.service";
 import type {
   Jwt,
   UnknownObject,
-  IDiscoveryService,
   ILoggerService,
+  IDiscoveryService,
   IScramblerService,
   NScramblerService,
 } from "~types";

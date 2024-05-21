@@ -1,6 +1,6 @@
-import { IAbstractConnector } from "./abstract.connector";
-import { Typeorm } from "../packages";
-import { Voidable } from "../fn-components";
+import type { Typeorm } from "../packages";
+import type { Voidable } from "../fn-components";
+import type { IAbstractConnector } from "./abstract.connector";
 
 export interface ITypeormConnector extends IAbstractConnector {
   readonly connection: Typeorm.DataSource;

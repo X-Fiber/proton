@@ -1,4 +1,4 @@
-import { Nullable, UnknownObject } from "../utils";
+import type { Nullable, UnknownObject } from "../utils";
 
 export interface IRedisTunnel {
   readonly hash: NRedisTunnel.Hash;

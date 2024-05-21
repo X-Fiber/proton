@@ -3,44 +3,44 @@ import { CoreSymbols } from "~symbols";
 
 import { Initiator } from "../initiator";
 import {
-  IntegrationConnector,
+  MongoConnector,
   RedisConnector,
   TypeormConnector,
-  MongoConnector,
   ComputeConnector,
   RabbitMQConnector,
+  IntegrationConnector,
 } from "../connectors";
 import {
-  SchemaLoader,
-  FunctionalityAgent,
   SchemaAgent,
+  SchemeLoader,
   IntegrationAgent,
+  FunctionalityAgent,
 } from "~ba-communication";
 import {
-  ContextService,
-  DiscoveryService,
-  CombinationService,
-  LocalizationProvider,
-  LoggerService,
-  PermissionProvider,
-  SchemaService,
-  ScramblerService,
-  SessionProvider,
-  MailIntegration,
-  ExceptionProvider,
-  MongoTunnel,
-  TypeormTunnel,
-  RedisTunnel,
-  FastifyHttpAdapter,
-  HttpFactory,
-  WsFactory,
   WsAdapter,
+  WsFactory,
+  FastifyHttpAdapter,
+  FileStorageFactory,
+  HttpFactory,
+  MongoTunnel,
+  RedisTunnel,
+  TypeormTunnel,
   RabbitMQTunnel,
   TaskService,
-  FileStorageFactory,
-  BufferFileStorageStrategy,
-  RedisFileStorageStrategy,
+  LoggerService,
+  SchemeService,
+  ContextService,
+  ScramblerService,
+  DiscoveryService,
+  CombinationService,
   CacheProvider,
+  SessionProvider,
+  ExceptionProvider,
+  PermissionProvider,
+  LocalizationProvider,
+  MailIntegration,
+  RedisFileStorageStrategy,
+  BufferFileStorageStrategy,
 } from "~fn-components";
 
 import type {
@@ -54,8 +54,8 @@ import type {
   ILoggerService,
   IMongoConnector,
   IMongoTunnel,
-  ISchemaAgent,
-  ISchemaLoader,
+  ISchemeAgent,
+  ISchemeLoader,
   ISchemeService,
   IComputeConnector,
   ITypeormConnector,
@@ -112,7 +112,7 @@ export const CoreModule = new inversify.ContainerModule(
       .to(LoggerService)
       .inSingletonScope();
     bind<ISchemeService>(CoreSymbols.SchemeService)
-      .to(SchemaService)
+      .to(SchemeService)
       .inSingletonScope();
     bind<IContextService>(CoreSymbols.ContextService)
       .to(ContextService)
@@ -165,12 +165,12 @@ export const CoreModule = new inversify.ContainerModule(
       .inSingletonScope();
 
     // Loaders
-    bind<ISchemaLoader>(CoreSymbols.SchemaLoader)
-      .to(SchemaLoader)
+    bind<ISchemeLoader>(CoreSymbols.SchemaLoader)
+      .to(SchemeLoader)
       .inSingletonScope();
 
     // Agents
-    bind<ISchemaAgent>(CoreSymbols.SchemaAgent)
+    bind<ISchemeAgent>(CoreSymbols.SchemaAgent)
       .to(SchemaAgent)
       .inTransientScope();
     bind<IIntegrationAgent>(CoreSymbols.IntegrationAgent)

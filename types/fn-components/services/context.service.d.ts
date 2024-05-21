@@ -1,6 +1,6 @@
-import { AsyncHooks } from "../../packages";
-import { IAbstractService } from "./abstract.service";
-import { NSchemaService } from "./schema.service";
+import type { AsyncHooks, Ws } from "../../packages";
+import type { IAbstractService } from "./abstract.service";
+import type { NSchemeService } from "./schema.service";
 
 export interface IContextService extends IAbstractService {
   readonly storage: AsyncHooks.AsyncLocalStorage<NContextService.Store>;
@@ -15,7 +15,7 @@ export namespace NContextService {
     userId?: string;
     service: string;
     domain: string;
-    schema: NSchemaService.BusinessScheme;
+    schema: NSchemeService.BusinessScheme;
     version: string;
     language: string;
   }
@@ -32,6 +32,7 @@ export namespace NContextService {
     path: string;
     event: string;
     type: string;
+    socket: Ws.WebSocket;
   }
 
   export interface TopicStore extends BaseStore {

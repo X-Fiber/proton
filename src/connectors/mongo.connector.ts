@@ -3,12 +3,12 @@ import { CoreSymbols } from "~symbols";
 import { Guards } from "~utils";
 import { AbstractConnector } from "./abstract.connector";
 
-import {
+import type {
   Mongoose,
   UnknownObject,
   IContextService,
-  IDiscoveryService,
   ILoggerService,
+  IDiscoveryService,
   IMongoConnector,
   NMongodbConnector,
 } from "~types";

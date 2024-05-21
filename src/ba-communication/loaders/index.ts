@@ -1,1 +1,1 @@
-export * from "./schema.loaders";
+export * from "./scheme.loaders";

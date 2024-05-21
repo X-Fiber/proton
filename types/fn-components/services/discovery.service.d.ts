@@ -1,5 +1,5 @@
-import { AnyObject } from "../utils";
-import { IAbstractService, NAbstractService } from "./abstract.service";
+import type { AnyObject } from "../utils";
+import type { IAbstractService, NAbstractService } from "./abstract.service";
 
 export interface IDiscoveryService extends IAbstractService {
   readonly serverTag: string;

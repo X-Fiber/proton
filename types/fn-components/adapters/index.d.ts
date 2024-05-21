@@ -1,3 +1,3 @@
-export * from "./abstract.http-adapter";
-export * from "./abstract.ws-adapter";
-export * from "./abstract.broker-adapter";
+export type * from "./abstract.http-adapter";
+export type * from "./abstract.ws-adapter";
+export type * from "./abstract.broker-adapter";

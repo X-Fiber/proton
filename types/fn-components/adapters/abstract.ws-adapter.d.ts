@@ -1,11 +1,9 @@
-import { Ws } from "../../packages";
-import {
+import type { Ws } from "../../packages";
+import type {
   NContextService,
   NDiscoveryService,
-  NSchemaService,
+  NSchemeService,
 } from "../services";
-import { NAbstractHttpAdapter } from "./abstract.http-adapter";
-import { AuthScope, Context } from "../services/schema.service";
 
 export interface IAbstractWsAdapter {
   start(): Promise<void>;
@@ -31,7 +29,7 @@ export namespace NAbstractWsAdapter {
   export type Context<
     USER_INFO = any,
     SYSTEM_INFO = any,
-    AUTH_SCOPE extends NSchemaService.AuthScope = NSchemaService.AuthScope
+    AUTH_SCOPE extends NSchemeService.AuthScope = NSchemeService.AuthScope
   > = {
     store: NContextService.EventStore;
   } & (AUTH_SCOPE extends "public:route"
@@ -49,7 +47,7 @@ export namespace NAbstractWsAdapter {
 
   export type Handler = (
     payload: any,
-    agents: NSchemaService.Agents,
+    agents: NSchemeService.Agents,
     context: NAbstractWsAdapter.Context
   ) => Promise<void>;
 }

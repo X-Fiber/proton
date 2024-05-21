@@ -1,35 +1,34 @@
-import { Joi, RabbitMQ, Typeorm } from "../../packages";
-import { IAbstractService } from "./abstract.service";
-import { NMongoProvider } from "../tunnels";
-import {
-  IFunctionalityAgent,
-  IIntegrationAgent,
-  ISchemaAgent,
-  NSchemaAgent,
-} from "../../ba-communication";
-import {
+import type { Joi, Typeorm } from "../../packages";
+import type { NMongoTunnel } from "../tunnels";
+import type { NStreamService } from "./stream.service";
+import type { IAbstractService } from "./abstract.service";
+import type { NRabbitMQConnector } from "../../connectors";
+import type { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
+import type {
   AnyFn,
+  FnObject,
   AnyObject,
   HttpMethod,
   ExtendedRecordObject,
-  FnObject,
 } from "../utils";
-import { NAbstractHttpAdapter, NAbstractWsAdapter } from "../adapters";
-import { NContextService } from "./context.service";
-import { NRabbitMQConnector } from "../../connectors";
-import { NStreamService } from "./stream.service";
+import type {
+  ISchemeAgent,
+  NSchemaAgent,
+  IFunctionalityAgent,
+  IIntegrationAgent,
+} from "../../ba-communication";
 
 export interface ISchemeService extends IAbstractService {
-  readonly schema: NSchemaService.BusinessScheme;
+  readonly schema: NSchemeService.BusinessScheme;
 
   getMongoRepository<T extends FnObject = FnObject>(): T;
   getAnotherMongoRepository<T extends FnObject = FnObject>(name: string): T;
   getValidator<
     T extends Record<string, AnyObject>
-  >(): NSchemaService.ValidatorStructure<T>;
+  >(): NSchemeService.ValidatorStructure<T>;
   getAnotherValidator<T extends Record<string, AnyObject>>(
     name: string
-  ): NSchemaService.ValidatorStructure<T>;
+  ): NSchemeService.ValidatorStructure<T>;
   getTypeormRepository<T>(): T;
   getAnotherTypeormRepository<T>(name: string): T;
   getResource(
@@ -44,17 +43,17 @@ export interface ISchemeService extends IAbstractService {
     language?: string
   ): string;
 
-  readonly typeormSchemas: NSchemaService.TypeormEntities;
+  readonly typeormSchemas: NSchemeService.TypeormEntities;
 
-  on(event: NSchemaService.Events, listener: () => void): void;
+  on(event: NSchemeService.Events, listener: () => void): void;
 }
 
-export namespace NSchemaService {
+export namespace NSchemeService {
   export type Config = {};
 
   export type Agents = {
     fnAgent: IFunctionalityAgent;
-    schemaAgent: ISchemaAgent;
+    schemaAgent: ISchemeAgent;
     inAgent: IIntegrationAgent;
   };
 
@@ -149,10 +148,10 @@ export namespace NSchemaService {
 
   export type MongoSchema<T = any> = (
     agents: Agents
-  ) => NMongoProvider.SchemaFn<T>;
+  ) => NMongoTunnel.SchemaFn<T>;
 
   export type MongoHandler<S = any, D = any> = (
-    provider: NMongoProvider.Repository<S>,
+    provider: NMongoTunnel.Repository<S>,
     agents: Agents,
     data: D
   ) => R;

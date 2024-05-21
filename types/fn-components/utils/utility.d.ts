@@ -1,5 +1,3 @@
-import { NDiscoveryService } from "../services";
-
 export type Voidable<T> = T | void;
 export type Nullable<T> = T | null;
 export type UnknownObject = Record<string, unknown>;

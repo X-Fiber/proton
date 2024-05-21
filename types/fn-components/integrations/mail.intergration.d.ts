@@ -1,5 +1,5 @@
-import { IAbstractIntegration } from "./abstract.integration";
-import { NDiscoveryService } from "../services";
+import type { NDiscoveryService } from "../services";
+import type { IAbstractIntegration } from "./abstract.integration";
 
 export interface IMailIntegration extends IAbstractIntegration {
   sendMailWithDynamicSender(

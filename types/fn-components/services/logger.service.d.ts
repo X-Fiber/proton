@@ -1,5 +1,5 @@
-import { IAbstractService } from "./abstract.service";
-import { NDiscoveryService } from "./discovery.service";
+import type { IAbstractService } from "./abstract.service";
+import type { NDiscoveryService } from "./discovery.service";
 
 export interface ILoggerService extends IAbstractService {
   error(msg: any, options: NLoggerService.CoreErrorOptions): void;

@@ -11,12 +11,12 @@ import type {
   NRabbitMQConnector,
   IExceptionProvider,
   IFunctionalityAgent,
-  ISchemaAgent,
+  ISchemeAgent,
   IIntegrationAgent,
-  NContextService,
   IContextService,
+  NContextService,
   ISchemeService,
-  NSchemaService,
+  NSchemeService,
 } from "~types";
 
 injectable();
@@ -210,9 +210,7 @@ export class RabbitMQConnector
       ...topic.consume,
     };
 
-    const name = `${service}.${domain}.${topic.version}.${queue}`;
-
-    channel.assertQueue(name, qOptions);
+    channel.assertQueue(queue, qOptions);
     channel.consume(
       queue,
       async (msg): Promise<void> => {
@@ -240,11 +238,11 @@ export class RabbitMQConnector
     queue: string,
     topic: NRabbitMQConnector.Topic
   ): Promise<void> {
-    const agents: NSchemaService.Agents = {
+    const agents: NSchemeService.Agents = {
       fnAgent: container.get<IFunctionalityAgent>(
         CoreSymbols.FunctionalityAgent
       ),
-      schemaAgent: container.get<ISchemaAgent>(CoreSymbols.SchemaAgent),
+      schemaAgent: container.get<ISchemeAgent>(CoreSymbols.SchemaAgent),
       inAgent: container.get<IIntegrationAgent>(CoreSymbols.IntegrationAgent),
     };
 

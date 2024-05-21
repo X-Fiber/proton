@@ -1,6 +1,6 @@
-import { IAbstractConnector } from "./abstract.connector";
-import { IoRedis } from "../packages";
-import { NDiscoveryService } from "../fn-components";
+import type { IoRedis } from "../packages";
+import type { NDiscoveryService } from "../fn-components";
+import type { IAbstractConnector } from "./abstract.connector";
 
 export interface IRedisConnector extends IAbstractConnector {
   readonly connection: IoRedis.IoRedis;

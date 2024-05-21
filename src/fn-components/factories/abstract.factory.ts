@@ -1,9 +1,9 @@
 import { injectable } from "~packages";
 
-import {
+import type {
+  ILoggerService,
   IAbstractFactory,
   IDiscoveryService,
-  ILoggerService,
   NDiscoveryService,
 } from "~types";
 
