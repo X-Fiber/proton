@@ -1,4 +1,4 @@
-import type { NContextService } from "~types";
+import type { NAbstractWsAdapter, NContextService } from "~types";
 
 export class Guards {
   public static isNotUndefined(x: undefined | any): boolean {
@@ -21,9 +21,15 @@ export class Guards {
     return typeof x === "object" && "event" in x;
   }
 
-  public static isTopic(
-    x: NContextService.Store
-  ): x is NContextService.TopicStore {
-    return typeof x === "object" && "topic" in x;
+  public static isEventStructure(
+    x: unknown
+  ): x is NAbstractWsAdapter.ClientEventStructure<NAbstractWsAdapter.EventKind> {
+    return (
+      typeof x === "object" &&
+      x !== null &&
+      "event" in x &&
+      "payload" in x &&
+      "kind" in x
+    );
   }
 }

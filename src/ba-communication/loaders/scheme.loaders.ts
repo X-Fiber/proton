@@ -1,5 +1,6 @@
 import { injectable, inject } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { Helpers } from "~utils";
 
 import type {
   AnyFn,
@@ -58,6 +59,7 @@ export class SchemeLoader implements ISchemeLoader {
         if (documents.router) {
           this._setRoute(name, documents.router);
         }
+
         if (documents.emitter) {
           this._setEmitter(name, documents.emitter);
         }
@@ -145,7 +147,8 @@ export class SchemeLoader implements ISchemeLoader {
         const route = methods[method];
         if (route) {
           const version = route.version ?? "v1";
-          const name = `${version}.${path}.${method.toUpperCase()}`;
+
+          const name = Helpers.getRouteUniqueName(method, version, path);
 
           if (storage.routes.has(name)) {
             throw new Error(
@@ -198,7 +201,8 @@ export class SchemeLoader implements ISchemeLoader {
 
       const stream = structure[path];
       const version = stream.version ?? "v1";
-      const name = `${version}.${path}`;
+
+      const name = Helpers.getStreamUniqueName(version, path);
 
       if (storage.streams.has(name)) {
         throw new Error(
@@ -250,7 +254,8 @@ export class SchemeLoader implements ISchemeLoader {
         const event = kinds[kind];
         if (event) {
           const version = event.version ?? "v1";
-          const name = `${version}.${event}.${kind}`;
+
+          const name = Helpers.getEventUniqueName(kind, version, path);
 
           if (storage.events.has(name)) {
             throw new Error(

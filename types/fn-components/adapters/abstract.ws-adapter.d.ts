@@ -16,6 +16,49 @@ export interface IAbstractWsAdapter {
 export namespace NAbstractWsAdapter {
   export type WsKind = "ws";
 
+  export type AllEventType =
+    | "handshake"
+    | "handshake.error"
+    | "validation.error.unknown_event"
+    | "validation.error.unknown_event_kind"
+    | "validation.error.invalid_data_structure"
+    | "validation.error.service_not_found"
+    | "validation.error.domain_not_found"
+    | "validation.error.event_not_found"
+    | "session:to:session"
+    | "session:to:room"
+    | "session:to:service";
+
+  export type EventKind = "handshake" | "validation" | "communication";
+
+  export type HandshakePayload = {
+    code: string;
+    message: string;
+  };
+
+  export type BaseCommunicationPayload = {
+    service: string;
+    domain: string;
+    version: string;
+    event: string;
+    language?: string;
+    data: any;
+  };
+
+  export type EventKindStructure<K extends EventKind> = K extends "handshake"
+    ? HandshakePayload
+    : K extends "validation"
+    ? HandshakePayload
+    : K extends "communication"
+    ? any
+    : never;
+
+  export type ClientEventStructure<E extends EventKind> = {
+    event: AllEventType;
+    kind: E;
+    payload: EventKindStructure<E>;
+  };
+
   export type Instance<K extends WsKind> = K extends "ws"
     ? Ws.WebSocketServer
     : never;

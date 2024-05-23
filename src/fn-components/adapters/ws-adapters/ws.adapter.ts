@@ -1,7 +1,9 @@
 import { https, http, ws, injectable, inject, uuid } from "~packages";
-import { ErrorCodes } from "~common";
+import { CommunicateCodes, ErrorCodes } from "~common";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
+import { Guards, Helpers } from "~utils";
+
 import { AbstractWsAdapter } from "./abstract.ws-adapter";
 
 import type {
@@ -177,126 +179,167 @@ export class WsAdapter
     ws.$__fiber__ = { connectionId, serverTag: this._config.serverTag };
     this._connections.set(connectionId, ws);
 
-    ws.send(
-      JSON.stringify({
-        type: "handshake",
-        payload: { code: "0002.0001", message: "handshake successful" },
-      })
-    );
+    this._send(ws, "handshake", "handshake", {
+      code: CommunicateCodes.ws.HANDSHAKE_SUCCESSFUL,
+      message: "handshake successful",
+    });
   }
 
   private async _message(ws: Ws.WebSocket, raw: Ws.RawData): Promise<void> {
     const data = raw.toString();
 
-    type Event = "handshake" | "handshake.error" | "session:to:session";
-    const kind: Event[] = ["session:to:session"];
-
-    let event: any = null;
+    let event: NAbstractWsAdapter.ClientEventStructure<NAbstractWsAdapter.EventKind>;
     try {
       event = JSON.parse(data);
-    } catch (e) {
-      // TODO: resolve error
-      console.error(e);
-      throw e;
+    } catch {
+      this._send(ws, "validation.error.invalid_data_structure", "validation", {
+        code: CommunicateCodes.ws.INVALID_DATA_STRUCTURE,
+        message:
+          "Invalid data structure. Structure must be object with event, kind and payload fields",
+      });
+      return;
     }
 
-    if ("event" in event && "payload" in event) {
-      const k = event.event as Event;
-      const p = event.payload as {
-        service: string;
-        domain: string;
-        event: string;
-        version: string;
-        data: any;
-        language: string;
-      };
+    if (!Guards.isEventStructure(event)) {
+      this._send(ws, "validation.error.invalid_data_structure", "validation", {
+        code: CommunicateCodes.ws.INVALID_DATA_STRUCTURE,
+        message:
+          "Invalid data structure. Structure must be object with event, kind and payload fields",
+      });
+      return;
+    }
 
-      if (kind.includes(k)) {
-        const service = this._schemaService.schema.get(p.service);
-        if (!service) {
-          ws.send(
-            JSON.stringify({
-              event: k + `.error`,
-              payload: {
-                code: "0001.0002",
-                message: "Resolve unknown service",
-              },
-            })
-          );
-          return;
+    switch (event.kind) {
+      case "communication":
+        await this._callSchemaHandler(ws, event.event, event.payload);
+        break;
+      case "handshake":
+        this._callHandshake(event.payload);
+        break;
+      case "validation":
+        this._callValidation(event.event, event.payload);
+        break;
+      default:
+        this._send(ws, "validation.error.unknown_event_kind", "validation", {
+          code: CommunicateCodes.ws.UNKNOWN_EVENT_KIND,
+          message: `Event kind '${event.kind}' not supported.`,
+        });
+        return;
+    }
+  }
+
+  private _callHandshake(payload: NAbstractWsAdapter.HandshakePayload): void {
+    console.warn("Method not implemented");
+  }
+
+  private _callValidation(
+    event: string,
+    payload: NAbstractWsAdapter.HandshakePayload
+  ): void {
+    console.warn("Method not implemented");
+  }
+
+  private async _callSchemaHandler(
+    ws: Ws.WebSocket,
+    event: string,
+    payload: NAbstractWsAdapter.BaseCommunicationPayload
+  ): Promise<void> {
+    const service = this._schemaService.schema.get(payload.service);
+
+    if (!service) {
+      this._send(ws, "validation.error.service_not_found", "validation", {
+        code: CommunicateCodes.ws.SERVICE_NOT_FOUND,
+        message: `Service "${payload.service}" not found in business scheme collection.`,
+      });
+      return;
+    }
+
+    const domain = service.get(payload.domain);
+    if (!domain) {
+      this._send(ws, "validation.error.domain_not_found", "validation", {
+        code: CommunicateCodes.ws.DOMAIN_NOT_FOUND,
+        message: `Domain "${payload.domain}" not found in service "${payload.service}".`,
+      });
+      return;
+    }
+
+    const act = Helpers.getEventUniqueName(
+      event,
+      payload.version,
+      payload.event
+    );
+
+    const storage = domain.events.get(act);
+    if (!storage) {
+      this._send(ws, "validation.error.event_not_found", "validation", {
+        code: CommunicateCodes.ws.EVENT_NOT_FOUND,
+        message: `Event name "${payload.event}" with version "${payload.version}" and type "${event}" not found in domain "${payload.domain}" in service "${payload.service}".`,
+      });
+      return;
+    }
+
+    const store: NContextService.EventStore = {
+      service: payload.service,
+      domain: payload.domain,
+      event: payload.event,
+      path: ws.url,
+      requestId: uuid.v4(),
+      version: payload.version,
+      schema: this._schemaService.schema,
+      socket: ws,
+      type: event,
+      language: payload.language ?? "",
+    };
+
+    try {
+      await this._contextService.storage.run(store, async () => {
+        const context: NAbstractWsAdapter.Context<any, any, "private:system"> =
+          {
+            store: store,
+            user: {},
+            system: {},
+          };
+
+        switch (storage.scope) {
+          case "public:route":
+            break;
+          case "private:user":
+            break;
+          case "private:system":
+            break;
         }
-
-        const domain = service.get(p.domain);
-        if (!domain) {
-          throw new Error("Resolve unknown domain");
-        }
-
-        const name = `${p.version}.${p.event}.${k}`;
-
-        const event = domain.events.get(name);
-        if (!event) throw new Error("Resolve unknown event");
-
-        const store: NContextService.EventStore = {
-          service: p.service,
-          domain: p.domain,
-          event: p.event,
-          path: ws.url,
-          requestId: uuid.v4(),
-          version: p.version,
-          schema: this._contextService.store.schema,
-          socket: ws,
-          type: k,
-          language: p.language,
-        };
-
         try {
-          await this._contextService.storage.run(store, async () => {
-            const context: NAbstractWsAdapter.Context<
-              any,
-              any,
-              "private:system"
-            > = {
-              store: store,
-              user: {},
-              system: {},
-            };
-
-            switch (event.scope) {
-              case "public:route":
-                break;
-              case "private:user":
-                break;
-              case "private:system":
-                break;
-            }
-            try {
-              await event.handler(
-                p.data,
-                {
-                  fnAgent: container.get<IFunctionalityAgent>(
-                    CoreSymbols.FunctionalityAgent
-                  ),
-                  schemaAgent: container.get<ISchemeAgent>(
-                    CoreSymbols.SchemaAgent
-                  ),
-                  inAgent: container.get<IIntegrationAgent>(
-                    CoreSymbols.IntegrationAgent
-                  ),
-                },
-                context
-              );
-            } catch (e) {
-              console.error(e);
-            }
-          });
+          await storage.handler(
+            payload.data,
+            {
+              fnAgent: container.get<IFunctionalityAgent>(
+                CoreSymbols.FunctionalityAgent
+              ),
+              schemaAgent: container.get<ISchemeAgent>(CoreSymbols.SchemaAgent),
+              inAgent: container.get<IIntegrationAgent>(
+                CoreSymbols.IntegrationAgent
+              ),
+            },
+            context
+          );
         } catch (e) {
-        } finally {
-          this._contextService.exit();
+          console.error(e);
         }
-      }
-    } else {
-      // TODO: resolve invalid structure
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this._contextService.exit();
     }
+  }
+
+  private _send<E extends NAbstractWsAdapter.AllEventType>(
+    socket: Ws.WebSocket,
+    event: E,
+    kind: NAbstractWsAdapter.EventKind,
+    payload: any
+  ) {
+    socket.send(JSON.stringify({ event, kind, payload }));
   }
 
   private _close(ws: Ws.WebSocket) {
