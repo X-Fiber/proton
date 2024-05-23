@@ -112,4 +112,24 @@ export class Helpers {
 
     return value;
   }
+
+  public static getRouteUniqueName(
+    method: string,
+    version: string,
+    action: string
+  ): string {
+    return `${method.toUpperCase()}.${version}.${action}`;
+  }
+
+  public static getStreamUniqueName(version: string, action: string): string {
+    return `${version}.${action}`;
+  }
+
+  public static getEventUniqueName(
+    type: string,
+    version: string,
+    event: string
+  ): string {
+    return `${type}.${version}.${event}`;
+  }
 }

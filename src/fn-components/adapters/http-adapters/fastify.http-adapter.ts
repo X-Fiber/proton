@@ -257,9 +257,11 @@ export class FastifyHttpAdapter
       });
     }
 
-    const act = `${req.params.version}.${
+    const act = Helpers.getRouteUniqueName(
+      req.method,
+      req.params.version,
       req.params.action
-    }.${req.method.toUpperCase()}`;
+    );
 
     const action = domain.domain.routes.get(act);
     if (!action) {

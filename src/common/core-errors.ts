@@ -32,3 +32,14 @@ export const ErrorCodes = {
   },
   ba: {},
 } as const;
+
+export const CommunicateCodes = {
+  ws: {
+    HANDSHAKE_SUCCESSFUL: "0002.0001.0000",
+    INVALID_DATA_STRUCTURE: "0002.0001.0001",
+    UNKNOWN_EVENT_KIND: "0002.0001.0002",
+    SERVICE_NOT_FOUND: "0002.0001.0003",
+    DOMAIN_NOT_FOUND: "0002.0001.0004",
+    EVENT_NOT_FOUND: "0002.0001.0005",
+  },
+} as const;

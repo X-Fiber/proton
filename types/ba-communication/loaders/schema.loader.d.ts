@@ -1,5 +1,5 @@
 import type { Typeorm } from "../../packages";
-import type {
+import {
   AnyFn,
   HttpMethod,
   NMongoTunnel,
@@ -8,6 +8,7 @@ import type {
   ExtendedRecordObject,
   NAbstractHttpAdapter,
   NAbstractFileStorageStrategy,
+  NAbstractWsAdapter,
 } from "../../fn-components";
 import type { NRabbitMQConnector } from "../../connectors";
 
@@ -50,7 +51,7 @@ export namespace NSchemaLoader {
       [key in NSchemeService.EventKind]?: {
         scope?: NSchemeService.AuthScope;
         version?: NSchemeService.Version;
-        handler: any;
+        handler: NAbstractWsAdapter.Handler;
       };
     };
   };
