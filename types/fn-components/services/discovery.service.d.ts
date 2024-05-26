@@ -26,7 +26,10 @@ export interface IDiscoveryService extends IAbstractService {
     name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, boolean>,
     def: boolean
   ): boolean;
-  getArray<T>(name: string, def: Array<T>): Array<T>;
+  getArray<T>(
+    name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, Array<T>>,
+    def: Array<T>
+  ): Array<T>;
   getCertificateBuffer(
     name: NDiscoveryService.KeyBuilder<NDiscoveryService.CoreConfig, string>
   ): Promise<Buffer>;
@@ -138,6 +141,11 @@ export namespace NDiscoveryService {
     enableWAL: boolean;
     flags: number;
     busyTimeout: number;
+  };
+
+  export type ManagerUser = {
+    name: string;
+    permissions: string[] | "All";
   };
 
   export type CoreConfig = {
@@ -373,6 +381,17 @@ export namespace NDiscoveryService {
           workerType?: "auto" | "web" | "process" | "thread";
           workerTerminateTimeout?: number;
         };
+      };
+      manager: {
+        enable: boolean;
+        secret: string;
+        connect: {
+          protocol: string;
+          host: string;
+          port: number;
+        };
+        users: Array<ManagerUser>;
+        communicationUrl: string;
       };
     };
     strategies: {

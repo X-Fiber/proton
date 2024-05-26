@@ -33,6 +33,7 @@ import {
   ScramblerService,
   DiscoveryService,
   CombinationService,
+  ManagerService,
   CacheProvider,
   SessionProvider,
   ExceptionProvider,
@@ -63,6 +64,7 @@ import type {
   IRedisConnector,
   IRedisTunnel,
   IScramblerService,
+  IManagerService,
   ISessionProvider,
   ILocalizationProvider,
   IMailIntegration,
@@ -123,9 +125,11 @@ export const CoreModule = new inversify.ContainerModule(
     bind<ITaskService>(CoreSymbols.TaskService)
       .to(TaskService)
       .inSingletonScope();
-
     bind<IAbstractService>(CoreSymbols.CombinationService)
       .to(CombinationService)
+      .inSingletonScope();
+    bind<IManagerService>(CoreSymbols.ManagerService)
+      .to(ManagerService)
       .inSingletonScope();
 
     // Providers

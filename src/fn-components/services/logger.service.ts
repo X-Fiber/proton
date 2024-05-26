@@ -56,7 +56,7 @@ export class LoggerService extends AbstractService implements ILoggerService {
     database: "magenta",
     storage: "yellow",
     info: "blue",
-    schema: "yellow",
+    schema: "bold green",
     verbose: "gray",
     debug: "bold green",
   };
@@ -219,9 +219,9 @@ export class LoggerService extends AbstractService implements ILoggerService {
   }
 
   public schema(msg: string, options?: NLoggerService.CoreSchemaOptions): void {
-    console.log(msg);
-
-    // throw new Error("Method not implemented");
+    if (this._loggers.core) {
+      this._loggers.core.log("schema", { msg, ...options });
+    }
   }
 
   public verbose(
@@ -310,10 +310,9 @@ export class LoggerService extends AbstractService implements ILoggerService {
               str += info.msg;
               break;
             case "schema":
-              str += Helpers.addLevel(info.level, "bgBlack", "yellow");
+              str += Helpers.addLevel(info.level, "bgBlue", "green");
               str += namespace;
               str += info.msg;
-              str += "\n";
               baseOptions();
               break;
             case "system":

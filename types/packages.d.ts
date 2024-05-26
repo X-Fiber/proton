@@ -72,7 +72,8 @@ export namespace Fastify {
 }
 
 export namespace Express {
-  export type Request = express.Request;
+  export type Application = express.Express;
+  export type Request<P = any, B = any> = express.Request<P, B>;
   export type Response = express.Response;
   export type Instance = express.Express;
 }

@@ -1,4 +1,4 @@
-import type { NAbstractWsAdapter, NContextService } from "~types";
+import { NAbstractWsAdapter, NContextService, NManagerService } from "~types";
 
 export class Guards {
   public static isNotUndefined(x: undefined | any): boolean {
@@ -31,5 +31,23 @@ export class Guards {
       "payload" in x &&
       "kind" in x
     );
+  }
+
+  public static isManagerScope(x: string): x is NManagerService.Scope {
+    const scopes: NManagerService.Scope[] = ["auth", "logger", "discovery"];
+    return scopes.some((s) => s === x);
+  }
+
+  public static isAuthCommands(x: string): x is NManagerService.Scope {
+    const scopes: NManagerService.LoginCommands[] = ["login"];
+    return scopes.some((s) => s === x);
+  }
+
+  public static isLoggerCommands(x: string): x is NManagerService.Scope {
+    const scopes: NManagerService.LoggerCommands[] = [
+      "set-logger-level",
+      "set-logger-transport",
+    ];
+    return scopes.some((s) => s === x);
   }
 }

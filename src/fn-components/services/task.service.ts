@@ -416,6 +416,10 @@ export class TaskService extends AbstractService implements ITaskService {
     this._scheduler.once(event, listener);
   }
 
+  public off(event: string | symbol, listener: (...args: any[]) => void): void {
+    this._scheduler.removeListener(event, listener);
+  }
+
   public removeListener(
     event: string | symbol,
     listener: (...args: any[]) => void

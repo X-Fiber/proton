@@ -19,6 +19,7 @@ export const CoreSymbols = {
   ScramblerService: Symbol("ScramblerService"),
   TaskService: Symbol("TaskService"),
   StreamService: Symbol("StreamService"),
+  ManagerService: Symbol("ManagerService"),
 
   // Providers
   ExceptionProvider: Symbol("ExceptionProvider"),

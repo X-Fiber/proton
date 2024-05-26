@@ -17,6 +17,7 @@ import libWinston from "winston";
 import libJoi from "joi";
 import libNodemailer from "nodemailer";
 import libFastify from "fastify";
+import express from "express";
 import libIoredis from "ioredis";
 import libWs from "ws";
 import { v4 } from "uuid";
@@ -101,6 +102,8 @@ export const https = {
 export const fastify = {
   fastify: libFastify,
 };
+
+export { express };
 
 export const ws = {
   WebSocketServer: libWs.WebSocketServer,

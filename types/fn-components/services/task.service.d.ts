@@ -171,6 +171,7 @@ export interface ITaskService extends IAbstractService {
   ): void;
   on<K extends string>(event: "delete", listener: (key: K) => void): void;
   on(event: string | symbol, listener: (...args: any[]) => void): void;
+  off(event: string | symbol, listener: (...args: any[]) => void): void;
 
   once(event: string | symbol, listener: (...args: any[]) => void): void;
   removeListener(

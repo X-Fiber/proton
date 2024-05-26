@@ -24,28 +24,28 @@ export abstract class AbstractService implements IAbstractService {
     return Guards.isNotUndefined(this._isStarted);
   }
 
-  public once(
+  protected once(
     event: NAbstractService.Event,
     listener: NAbstractService.Listener
   ): void {
     this._emitter.once(event, listener);
   }
 
-  public on(
+  protected on(
     event: NAbstractService.Event,
     listener: NAbstractService.Listener
   ): void {
     this._emitter.once(event, listener);
   }
 
-  public emit<T = never>(
+  protected emit<T = never>(
     event: NAbstractService.Event,
     data?: NAbstractService.Data<T>
   ): void {
     this._emitter.emit(event, data);
   }
 
-  public off(
+  protected off(
     event: NAbstractService.Event,
     listener: NAbstractService.Listener
   ): void {
@@ -70,6 +70,17 @@ export abstract class AbstractService implements IAbstractService {
         this.emit(`services:${this._SERVICE_NAME}:start`);
       } else {
         this._isStarted = false;
+        const msg = this._SERVICE_NAME + " service not enabled.";
+
+        if (this._loggerService) {
+          this._loggerService.warn(msg, {
+            namespace: this._SERVICE_NAME,
+            tag: "Init",
+            scope: "Core",
+          });
+        } else {
+          Helpers.levelConsoleLog(msg, "bgYellow", "warn", this._SERVICE_NAME);
+        }
       }
     } catch (e) {
       if (this._loggerService) {

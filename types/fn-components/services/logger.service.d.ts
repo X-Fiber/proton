@@ -64,12 +64,17 @@ export namespace NLoggerService {
     database: "magenta";
     storage: "yellow";
     info: "blue";
-    schema: "yellow";
+    schema: "bold green";
     verbose: "gray";
     debug: "bold green";
   };
 
-  export type ServiceTag = "Connection" | "Execution" | "Init" | "Destroy";
+  export type ServiceTag =
+    | "Connection"
+    | "Execution"
+    | "Init"
+    | "Destroy"
+    | "Registration";
 
   export type ErrorType = "FATAL" | "FAIL" | "EXCEPTION" | "CUSTOM";
 

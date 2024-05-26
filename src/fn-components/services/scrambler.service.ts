@@ -17,7 +17,7 @@ export class ScramblerService
   implements IScramblerService
 {
   protected readonly _SERVICE_NAME = ScramblerService.name;
-  protected _config: NScramblerService.Config | undefined;
+  protected _config: NScramblerService.Config;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
@@ -26,56 +26,61 @@ export class ScramblerService
     protected readonly _loggerService: ILoggerService
   ) {
     super();
+
+    this._config = {
+      enable: false,
+      salt: 5,
+      secret: "default",
+      randomBytes: 10,
+      accessExpiredAt: 10,
+      refreshExpiredAt: 30,
+      defaultAlgorithm: "MD5",
+    };
   }
 
-  private _setConfig() {
-    this._config = {
+  private _setConfig(): NScramblerService.Config {
+    return {
       enable: this._discoveryService.getBoolean(
         "services.scrambler.enable",
-        false
+        this._config.enable
       ),
-      salt: this._discoveryService.getNumber("services.scrambler.salt", 5),
+      salt: this._discoveryService.getNumber(
+        "services.scrambler.salt",
+        this._config.salt
+      ),
       secret: this._discoveryService.getString(
         "services.scrambler.secret",
-        "default"
+        this._config.secret
       ),
       randomBytes: this._discoveryService.getNumber(
         "services.scrambler.randomBytes",
-        10
+        this._config.randomBytes
       ),
       accessExpiredAt: this._discoveryService.getNumber(
         "services.scrambler.accessExpiredAt",
-        10
+        this._config.accessExpiredAt
       ),
       refreshExpiredAt: this._discoveryService.getNumber(
         "services.scrambler.refreshExpiredAt",
-        30
+        this._config.refreshExpiredAt
       ),
       defaultAlgorithm: this._discoveryService.getString(
         "services.scrambler.defaultAlgorithm",
-        "MD5"
+        this._config.defaultAlgorithm
       ),
     };
   }
 
   protected async init(): Promise<boolean> {
-    this._setConfig();
-    if (!this._config) throw this._throwConfigError();
+    this._config = this._setConfig();
 
-    if (!this._config.enable) {
-      this._loggerService.warn(`Service ${this._SERVICE_NAME} is disabled.`, {
-        tag: "Connection",
-        scope: "Core",
-        namespace: this._SERVICE_NAME,
-      });
-      return false;
-    }
+    if (!this._config.enable) return false;
 
     return true;
   }
 
   protected async destroy(): Promise<void> {
-    this._config = undefined;
+    // Not implemented
   }
 
   public get accessExpiredAt(): number {

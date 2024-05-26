@@ -11,6 +11,7 @@ import type {
   IComputeConnector,
   IAbstractService,
   ITaskService,
+  IManagerService,
 } from "~types";
 
 @injectable()
@@ -32,7 +33,9 @@ export class ComputeConnector
     @inject(CoreSymbols.ScramblerService)
     private readonly _scramblerService: IScramblerService,
     @inject(CoreSymbols.TaskService)
-    private readonly _taskService: ITaskService
+    private readonly _taskService: ITaskService,
+    @inject(CoreSymbols.ManagerService)
+    private readonly _managerService: IManagerService
   ) {
     super();
   }
@@ -45,8 +48,10 @@ export class ComputeConnector
     await this._combinationService.start();
     await this._scramblerService.start();
     await this._taskService.start();
+    await this._managerService.start();
   }
   public async stop(): Promise<void> {
+    await this._managerService.stop();
     await this._taskService.stop();
     await this._scramblerService.stop();
     await this._combinationService.stop();

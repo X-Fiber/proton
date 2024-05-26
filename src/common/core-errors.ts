@@ -43,3 +43,16 @@ export const CommunicateCodes = {
     EVENT_NOT_FOUND: "0002.0001.0005",
   },
 } as const;
+
+export const ManagerCodes = {
+  validation: {
+    SCOPE_NOT_FOUND: "0001.0.0001",
+    COMMAND_NOT_FOUND: "0001.0.0002",
+    SECRET_NOT_FOUND: "0001.0.0003",
+    USER_NOT_FOUND: "0001.0.0004",
+  },
+  auth: {
+    NOT_SUPPORTED_ENTITY: "0002.0.0001",
+    SUCCESS: "0002.1.0001",
+  },
+};

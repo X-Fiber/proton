@@ -57,17 +57,17 @@ export class SchemeLoader implements ISchemeLoader {
 
         this._setDomain(name);
         if (documents.router) {
-          this._setRoute(name, documents.router);
+          this._setRoute(service.service, name, documents.router);
         }
 
         if (documents.emitter) {
-          this._setEmitter(name, documents.emitter);
+          this._setEmitter(service.service, name, documents.emitter);
         }
         if (documents.broker) {
           this._setBroker(service.service, name, documents.broker);
         }
         if (documents.streamer) {
-          this._setStreamer(name, documents.streamer);
+          this._setStreamer(service.service, name, documents.streamer);
         }
         if (documents.helper) {
           this._setHelper(name, documents.helper);
@@ -117,26 +117,27 @@ export class SchemeLoader implements ISchemeLoader {
   }
 
   private _setRoute(
+    service: string,
     domain: string,
     structure: NSchemaLoader.RouterStructure
   ): void {
     const storage = this._domains.get(domain);
     if (!storage) {
       this._setDomain(domain);
-      this._setRoute(domain, structure);
+      this._setRoute(service, domain, structure);
       return;
     }
 
     for (const path in structure) {
       if (path.includes("/")) {
         throw new Error(
-          'Endpoint name is not supported slash "/". Please use slag string path'
+          `X-Fiber system not supported dots '/'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
         );
       }
 
       if (path.includes(".")) {
         throw new Error(
-          "Endpoint name is not supported dots '.'. Please use slag string path"
+          `X-Fiber system not supported dots '.'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
         );
       }
 
@@ -152,12 +153,13 @@ export class SchemeLoader implements ISchemeLoader {
 
           if (storage.routes.has(name)) {
             throw new Error(
-              `Route "${path}" with http method "${method}" has been exists in domain "${domain}"`
+              `Route '${name}' has been exists in '${domain}' domain in '${service}' service.`
             );
           }
 
           this._loggerService.schema(
-            `Route "${name}" with method ${method} has been register`
+            `Route '${name}' in '${domain}' domain in '${service}' service has been registration.`,
+            { namespace: "Router", scope: "Core" }
           );
 
           storage.routes.set(name, {
@@ -176,26 +178,27 @@ export class SchemeLoader implements ISchemeLoader {
   }
 
   private _setStreamer(
+    service: string,
     domain: string,
     structure: NSchemaLoader.StreamerStructure
   ): void {
     const storage = this._domains.get(domain);
     if (!storage) {
       this._setDomain(domain);
-      this._setStreamer(domain, structure);
+      this._setStreamer(service, domain, structure);
       return;
     }
 
     for (const path in structure) {
       if (path.includes("/")) {
         throw new Error(
-          'Endpoint name is not supported slash "/". Please use slag string path'
+          `X-Fiber system not supported dots '/'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
         );
       }
 
       if (path.includes(".")) {
         throw new Error(
-          "Endpoint name is not supported dots '.'. Please use slag string path"
+          `X-Fiber system not supported dots '.'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
         );
       }
 
@@ -206,9 +209,14 @@ export class SchemeLoader implements ISchemeLoader {
 
       if (storage.streams.has(name)) {
         throw new Error(
-          `Stream "${path}" with version "${version}" has been exists in domain "${domain}"`
+          `Route '${name}' has been exists in '${domain}' domain in '${service}' service.`
         );
       }
+
+      this._loggerService.schema(
+        `Route '${name}' in '${domain}' domain in '${service}' service has been registration.`,
+        { namespace: "Streamer", scope: "Core" }
+      );
 
       storage.streams.set(name, {
         path: path,
@@ -224,26 +232,27 @@ export class SchemeLoader implements ISchemeLoader {
   }
 
   private _setEmitter(
+    service: string,
     domain: string,
     structure: NSchemaLoader.EmitterStructure
   ): void {
     const storage = this._domains.get(domain);
     if (!storage) {
       this._setDomain(domain);
-      this._setEmitter(domain, structure);
+      this._setEmitter(service, domain, structure);
       return;
     }
 
     for (const path in structure) {
       if (path.includes("/")) {
         throw new Error(
-          'Event name is not supported slash "/". Please use slag string path'
+          `X-Fiber system not supported dots '/'. Please use slag string path for '${path}' event in '${domain}' domain in '${service}' service.`
         );
       }
 
       if (path.includes(".")) {
         throw new Error(
-          "Event name is not supported dots '.'. Please use slag string path"
+          `X-Fiber system not supported dots '.'. Please use slag string path for '${path}' event in '${domain}' domain in '${service}' service.`
         );
       }
 
@@ -259,9 +268,14 @@ export class SchemeLoader implements ISchemeLoader {
 
           if (storage.events.has(name)) {
             throw new Error(
-              `Event "${event}" with event kind "${kind}" has been exists in domain "${domain}"`
+              `Event '${name}' has been exists in '${domain}' domain in '${service}' service.`
             );
           }
+
+          this._loggerService.schema(
+            `Event '${name}' in '${domain}' domain in '${service}' service has been registration.`,
+            { namespace: "Emitter", scope: "Core" }
+          );
 
           storage.events.set(name, {
             kind: kind,
