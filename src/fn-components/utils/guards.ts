@@ -50,4 +50,17 @@ export class Guards {
     ];
     return scopes.some((s) => s === x);
   }
+
+  public static isDiscoveryCommands(
+    x: string
+  ): x is NManagerService.DiscoveryCommands {
+    const scopes: NManagerService.DiscoveryCommands[] = [
+      "get-service-status",
+      "get-service-config",
+      "reload-core-config",
+      "reload-scheme-config",
+    ];
+
+    return scopes.some((s) => s === x);
+  }
 }

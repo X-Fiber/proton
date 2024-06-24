@@ -1,14 +1,13 @@
 import { injectable, inject } from "~packages";
 import { CoreSymbols } from "~symbols";
-import { container } from "~container";
+
 import { AbstractService } from "./abstract.service";
 
 import type {
   ILoggerService,
   IAbstractFactory,
-  IContextService,
   IDiscoveryService,
-  IExceptionProvider,
+  ILifecycleService,
 } from "~types";
 
 @injectable()
@@ -16,12 +15,12 @@ export class CombinationService extends AbstractService {
   protected readonly _SERVICE_NAME = CombinationService.name;
 
   constructor(
+    @inject(CoreSymbols.LifecycleService)
+    protected readonly _lifecycleService: ILifecycleService,
     @inject(CoreSymbols.DiscoveryService)
     protected readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
     protected readonly _loggerService: ILoggerService,
-    @inject(CoreSymbols.ContextService)
-    private readonly _contextService: IContextService,
     @inject(CoreSymbols.HttpFactory)
     private readonly _httpFactory: IAbstractFactory,
     @inject(CoreSymbols.WsFactory)
@@ -37,23 +36,12 @@ export class CombinationService extends AbstractService {
       await this._httpFactory.run();
       await this._wsFactory.run();
       await this._fileStorage.run();
+
+      this._lifecycleService.emit("CombinationService:init");
+
       return true;
     } catch (e) {
-      this._loggerService.error(e, {
-        namespace: CombinationService.name,
-        tag: "Init",
-        errorType: "FATAL",
-        scope: "Core",
-      });
-      throw container
-        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-        .throwError(e, {
-          namespace: CombinationService.name,
-          tag: "Connection",
-          requestId: this._contextService.store.requestId,
-          sessionId: this._contextService.store.sessionId,
-          errorType: "FATAL",
-        });
+      throw this._catchError(e, "Init");
     }
   }
 
@@ -62,22 +50,10 @@ export class CombinationService extends AbstractService {
       await this._fileStorage.stand();
       await this._httpFactory.stand();
       await this._wsFactory.stand();
+
+      this._lifecycleService.emit("CombinationService:destroy");
     } catch (e) {
-      this._loggerService.error(e, {
-        namespace: CombinationService.name,
-        tag: "Init",
-        errorType: "FATAL",
-        scope: "Core",
-      });
-      throw container
-        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-        .throwError(e, {
-          namespace: CombinationService.name,
-          tag: "Destroy",
-          requestId: this._contextService.store.requestId,
-          sessionId: this._contextService.store.sessionId,
-          errorType: "FATAL",
-        });
+      throw this._catchError(e, "Destroy");
     }
   }
 }

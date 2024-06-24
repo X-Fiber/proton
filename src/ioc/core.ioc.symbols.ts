@@ -11,6 +11,7 @@ export const CoreSymbols = {
   RabbitMQConnector: Symbol("RabbitMQConnector"),
 
   // Services
+  LifecycleService: Symbol("LifecycleService"),
   DiscoveryService: Symbol("DiscoveryService"),
   LoggerService: Symbol("LoggerService"),
   SchemeService: Symbol("SchemeService"),

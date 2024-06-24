@@ -1,13 +1,20 @@
 import { injectable, events } from "~packages";
+import { container } from "~container";
 import { Helpers, Guards } from "~utils";
 
-import type {
+import {
   Events,
   ILoggerService,
   IDiscoveryService,
   IAbstractService,
   NAbstractService,
+  ILifecycleService,
+  IExceptionProvider,
+  ICoreError,
+  NExceptionProvider,
 } from "~types";
+import { CoreSymbols } from "~symbols";
+import { ErrorCodes } from "~common";
 
 @injectable()
 export abstract class AbstractService implements IAbstractService {
@@ -17,7 +24,8 @@ export abstract class AbstractService implements IAbstractService {
 
   protected _isStarted: boolean = false;
   protected readonly _emitter: Events.EventEmitter = new events.EventEmitter();
-  protected abstract readonly _discoveryService: IDiscoveryService;
+  protected abstract readonly _lifecycleService: ILifecycleService;
+  protected abstract readonly _discoveryService: IDiscoveryService | undefined;
   protected abstract readonly _loggerService: ILoggerService | undefined;
 
   public get isStarted(): boolean {
@@ -111,7 +119,6 @@ export abstract class AbstractService implements IAbstractService {
       }
       this._isStarted = false;
 
-      this.emit(`services:${this._SERVICE_NAME}:stop`);
       this._emitter.removeAllListeners();
     } catch (e) {
       if (this._loggerService) {
@@ -126,5 +133,16 @@ export abstract class AbstractService implements IAbstractService {
       }
       throw e;
     }
+  }
+
+  protected _catchError(e: any, tag: NExceptionProvider.ErrorTag): ICoreError {
+    return container
+      .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+      .throwError(e, {
+        tag: tag,
+        namespace: this._SERVICE_NAME,
+        code: ErrorCodes.fn.CATCH_ERROR,
+        errorType: "FATAL",
+      });
   }
 }

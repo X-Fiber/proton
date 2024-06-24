@@ -27,11 +27,12 @@ import {
   TypeormTunnel,
   RabbitMQTunnel,
   TaskService,
+  LifecycleService,
+  DiscoveryService,
   LoggerService,
   SchemeService,
   ContextService,
   ScramblerService,
-  DiscoveryService,
   CombinationService,
   ManagerService,
   CacheProvider,
@@ -79,6 +80,7 @@ import type {
   ITaskService,
   IAbstractFileStorageStrategy,
   ICacheProvider,
+  ILifecycleService,
 } from "~types";
 
 export const CoreModule = new inversify.ContainerModule(
@@ -107,6 +109,9 @@ export const CoreModule = new inversify.ContainerModule(
       .inSingletonScope();
 
     // Services
+    bind<ILifecycleService>(CoreSymbols.LifecycleService)
+      .to(LifecycleService)
+      .inSingletonScope();
     bind<IDiscoveryService>(CoreSymbols.DiscoveryService)
       .to(DiscoveryService)
       .inSingletonScope();

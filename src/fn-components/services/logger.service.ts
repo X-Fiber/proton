@@ -1,5 +1,6 @@
 import { injectable, inject, winston } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { defaultConfig } from "~common";
 import { Helpers } from "~utils";
 
 import { AbstractService } from "./abstract.service";
@@ -9,6 +10,7 @@ import type {
   ILoggerService,
   NLoggerService,
   IDiscoveryService,
+  ILifecycleService,
 } from "~types";
 
 @injectable()
@@ -62,29 +64,13 @@ export class LoggerService extends AbstractService implements ILoggerService {
   };
 
   constructor(
+    @inject(CoreSymbols.LifecycleService)
+    protected readonly _lifecycleService: ILifecycleService,
     @inject(CoreSymbols.DiscoveryService)
     protected readonly _discoveryService: IDiscoveryService
   ) {
     super();
-    this._config = {
-      enable: true,
-      loggers: {
-        core: true,
-        schema: true,
-      },
-      transports: {
-        console: {
-          core: {
-            enable: true,
-            level: "verbose",
-          },
-          schema: {
-            enable: true,
-            level: "debug",
-          },
-        },
-      },
-    };
+    this._config = defaultConfig.services.logger;
     winston.addColors(this._LOGGER_COLORS);
   }
 
@@ -133,14 +119,9 @@ export class LoggerService extends AbstractService implements ILoggerService {
 
   public async init(): Promise<boolean> {
     this._config = this._setConfig();
-    this._discoveryService.on("service:DiscoveryService:reload", () => {
+    this._lifecycleService.on("DiscoveryService:reload", () => {
       this._config = this._setConfig();
     });
-
-    if (!this._config) {
-      console.log(`Config for ${this._SERVICE_NAME} not initialize`);
-      return false;
-    }
 
     this._container = new winston.Container();
     if (this._config.loggers.core) {
@@ -172,10 +153,33 @@ export class LoggerService extends AbstractService implements ILoggerService {
     this._loggers.core = this._container.get(this._LOGGER_TYPES.core);
     this._loggers.schema = this._container.get(this._LOGGER_TYPES.schema);
 
-    return typeof this._config !== "undefined";
+    this._lifecycleService.emit("LoggerService:init");
+
+    return true;
   }
 
-  public async destroy(): Promise<void> {}
+  public async destroy(): Promise<void> {
+    if (this._loggers.core) {
+      if (this._container) {
+        this._container.close(this._LOGGER_TYPES.core);
+      }
+
+      this._loggers.core.destroy();
+      this._loggers.core = undefined;
+    }
+    if (this._loggers.schema) {
+      if (this._container) {
+        this._container.close(this._LOGGER_TYPES.schema);
+      }
+
+      this._loggers.schema.destroy();
+      this._loggers.schema = undefined;
+    }
+    this._container = undefined;
+    this._loggers = {};
+
+    this._lifecycleService.emit("LoggerService:destroy");
+  }
 
   public error(msg: any, options: NLoggerService.CoreErrorOptions): void {
     if (this._loggers.core) {

@@ -7,3 +7,4 @@ export * from "./scrambler.service";
 export * from "./combination.service";
 export * from "./task.service";
 export * from "./manager.service";
+export * from "./lifecycle.service";

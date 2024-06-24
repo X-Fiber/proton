@@ -3,8 +3,8 @@ import type { IAbstractService, NAbstractService } from "./abstract.service";
 
 export interface IDiscoveryService extends IAbstractService {
   readonly serverTag: string;
+  readonly config: NDiscoveryService.CoreConfig;
 
-  on(event: NDiscoveryService.Event, listener: NAbstractService.Listener): void;
   reloadConfigurations(): Promise<void>;
 
   getOptional<K, T extends K | undefined = K | undefined>(

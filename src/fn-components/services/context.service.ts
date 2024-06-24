@@ -1,5 +1,8 @@
 import { injectable, inject, async_hooks } from "~packages";
+import { container } from "~container";
 import { CoreSymbols } from "~symbols";
+import { ErrorCodes } from "~common";
+
 import { AbstractService } from "./abstract.service";
 
 import type {
@@ -8,6 +11,8 @@ import type {
   ILoggerService,
   IContextService,
   NContextService,
+  ILifecycleService,
+  IExceptionProvider,
 } from "~types";
 
 @injectable()
@@ -18,6 +23,8 @@ export class ContextService extends AbstractService implements IContextService {
     | undefined;
 
   constructor(
+    @inject(CoreSymbols.LifecycleService)
+    protected readonly _lifecycleService: ILifecycleService,
     @inject(CoreSymbols.DiscoveryService)
     protected readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
@@ -27,23 +34,52 @@ export class ContextService extends AbstractService implements IContextService {
   }
 
   protected async init(): Promise<boolean> {
-    this._STORAGE =
-      new async_hooks.AsyncLocalStorage<NContextService.RouteStore>();
+    try {
+      this._STORAGE =
+        new async_hooks.AsyncLocalStorage<NContextService.RouteStore>();
 
-    return true;
+      this._lifecycleService.emit("ContextService:init");
+      return true;
+    } catch (e) {
+      throw this._catchError(e, "Init");
+    }
+  }
+
+  protected async destroy(): Promise<void> {
+    if (this._STORAGE) {
+      this._STORAGE.exit(() => {});
+      this._STORAGE = undefined;
+    }
+
+    this._lifecycleService.emit("ContextService:destroy");
   }
 
   public get storage(): AsyncHooks.AsyncLocalStorage<NContextService.RouteStore> {
     if (!this._STORAGE) {
-      throw new Error("Storage not initialize");
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError("Async local storage not initialize.", {
+          code: ErrorCodes.fn.ContextService.NOT_INIT,
+          tag: "Execution",
+          namespace: this._SERVICE_NAME,
+          errorType: "FATAL",
+        });
     }
+
     return this._STORAGE;
   }
 
   public get store(): NContextService.RouteStore {
     const store = this.storage.getStore();
     if (!store) {
-      throw new Error("Async local store not found");
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError("Async local store not found.", {
+          code: ErrorCodes.fn.ContextService.NOT_INIT,
+          tag: "Execution",
+          namespace: this._SERVICE_NAME,
+          errorType: "FATAL",
+        });
     }
     return store;
   }
@@ -52,12 +88,5 @@ export class ContextService extends AbstractService implements IContextService {
     return this.storage.exit(() => {
       if (callback) callback();
     });
-  }
-
-  protected async destroy(): Promise<void> {
-    if (this._STORAGE) {
-      this._STORAGE.exit(() => {});
-      this._STORAGE = undefined;
-    }
   }
 }

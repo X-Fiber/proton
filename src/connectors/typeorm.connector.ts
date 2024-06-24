@@ -1,15 +1,17 @@
 import { injectable, inject, typeorm } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { container } from "~container";
+import { ErrorCodes } from "~common";
 import { AbstractConnector } from "./abstract.connector";
 
-import type {
+import {
   Typeorm,
-  Voidable,
   IDiscoveryService,
   ILoggerService,
   ITypeormConnector,
   NTypeormConnector,
   ISchemeService,
+  IExceptionProvider,
 } from "~types";
 
 @injectable()
@@ -17,8 +19,9 @@ export class TypeormConnector
   extends AbstractConnector
   implements ITypeormConnector
 {
+  protected readonly _CONNECTOR_NAME = TypeormConnector.name;
   private _connection: Typeorm.DataSource | undefined;
-  private _config: NTypeormConnector.Config | undefined;
+  private _config: NTypeormConnector.Config;
   private _repositories: Map<string, Typeorm.Repository<unknown>>;
 
   constructor(
@@ -32,145 +35,157 @@ export class TypeormConnector
     super();
 
     this._repositories = new Map<string, Typeorm.Repository<unknown>>();
+
+    this._config = {
+      enable: false,
+      type: "postgres" as NTypeormConnector.DatabaseType,
+      protocol: "http",
+      host: "0.0.0.0",
+      port: 5432,
+      username: "postgres",
+      password: "postgres",
+      database: "",
+      schema: "public",
+    };
   }
 
-  private _setConfig(): void {
-    this._config = {
+  private _setConfig(): NTypeormConnector.Config {
+    return {
       enable: this._discoveryService.getBoolean(
         "connectors.typeorm.enable",
-        false
+        this._config.enable
       ),
       type: this._discoveryService.getString(
         "connectors.typeorm.type",
-        "postgres"
+        this._config.type
       ) as NTypeormConnector.DatabaseType,
       protocol: this._discoveryService.getString(
         "connectors.typeorm.postgres.credentials.protocol",
-        "http"
+        this._config.protocol
       ),
       host: this._discoveryService.getString(
         "connectors.typeorm.postgres.credentials.host",
-        "0.0.0.0"
+        this._config.host
       ),
       port: this._discoveryService.getNumber(
         "connectors.typeorm.postgres.credentials.port",
-        5432
+        this._config.port
       ),
       username: this._discoveryService.getString(
         "connectors.typeorm.postgres.credentials.username",
-        "postgres"
+        this._config.username
       ),
       password: this._discoveryService.getString(
         "connectors.typeorm.postgres.credentials.password",
-        "postgres"
+        this._config.password
       ),
       database: this._discoveryService.getString(
         "connectors.typeorm.postgres.credentials.database",
-        ""
+        this._config.database
       ),
       schema: this._discoveryService.getString(
         "connectors.typeorm.postgres.options.schema",
-        "public"
+        this._config.schema
       ),
     };
   }
 
   public async start(): Promise<void> {
-    this._setConfig();
-
-    if (!this._config) {
-      throw new Error("Config is not set");
-    }
+    this._config = this._setConfig();
 
     if (!this._config.enable) {
-      this._loggerService.warn("Typeorm connector is disabled", {
+      this._loggerService.warn(`${TypeormConnector.name} is disabled.`, {
         tag: "Connection",
         scope: "Core",
-        namespace: "TypeormConnector",
+        namespace: TypeormConnector.name,
       });
       return;
     }
 
+    const { type, protocol, host, port, schema } = this._config;
+
+    const options: Typeorm.DataSourceOptions = {
+      type: this._config.type,
+      host: this._config.host,
+      port: this._config.port,
+      database: this._config.database,
+      username: this._config.username,
+      password: this._config.password,
+      useUTC: true,
+      entities: Array.from(this._schemaService.typeormSchemas.values()),
+      schema: schema,
+      synchronize: true,
+    };
+    this._connection = new typeorm.DataSource(options);
+
     try {
-      const {
-        type,
-        protocol,
-        host,
-        port,
-        database,
-        password,
-        username,
-        schema,
-      } = this._config;
-      const options: Typeorm.DataSourceOptions = {
-        type: type,
-        host: host,
-        port: port,
-        database: database,
-        username: username,
-        password: password,
-        useUTC: true,
-        entities: Array.from(this._schemaService.typeormSchemas.values()),
-        schema: schema,
-        synchronize: true,
-      };
-      this._connection = new typeorm.DataSource(options);
-
       await this._connection.initialize();
-
-      for (const [name, entity] of this._schemaService.typeormSchemas) {
-        this._repositories.set(name, this._connection.getRepository(entity));
-      }
-
-      this._loggerService.system(
-        `Typeorm connector with type "${type}" has been started on ${protocol}://${host}:${port}.`,
-        {
-          tag: "Connection",
-          scope: "Core",
-          namespace: "TypeormConnector",
-        }
-      );
     } catch (e) {
-      throw e;
+      throw this._catchError(e, "Init");
     }
+
+    for (const [name, entity] of this._schemaService.typeormSchemas) {
+      this._repositories.set(name, this._connection.getRepository(entity));
+    }
+
+    this._loggerService.system(
+      `${TypeormConnector.name} with type "${type}" has been started on ${protocol}://${host}:${port}.`,
+      {
+        tag: "Connection",
+        scope: "Core",
+        namespace: TypeormConnector.name,
+      }
+    );
+
+    this._emit<"TypeormConnector">("connector:TypeormConnector:init");
   }
 
   public async stop(): Promise<void> {
-    this._config = undefined;
-
     if (!this._connection) return;
-    await this.connection.destroy();
-    this._connection = undefined;
 
+    try {
+      await this.connection.destroy();
+    } catch (e) {
+      throw this._catchError(e, "Destroy");
+    }
+    this._connection = undefined;
     this._emitter.removeAllListeners();
 
-    this._loggerService.system(`Typeorm connector has been stopped.`, {
+    this._loggerService.system(`${TypeormConnector.name} has been stopped.`, {
       tag: "Connection",
       scope: "Core",
-      namespace: "TypeormConnector",
+      namespace: TypeormConnector.name,
     });
+
+    this._emit<"TypeormConnector">("connector:TypeormConnector:destroy");
   }
 
   public getRepository<T>(name: string): Typeorm.Repository<T> {
     const repository = this._repositories.get(name);
     if (!repository) {
-      throw new Error(`Repository "${name}" not found`);
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError(`Repository "${name}" not found.`, {
+          tag: "Execution",
+          namespace: this._CONNECTOR_NAME,
+          errorType: "FATAL",
+          code: ErrorCodes.conn.TypeormConnector.REPO_NOT_FOUND,
+        });
     }
 
     return repository as Typeorm.Repository<T>;
   }
 
-  public emit<T>(event: NTypeormConnector.Events, data?: Voidable<T>): void {
-    this._emitter.emit(event, data);
-  }
-
-  public on(event: NTypeormConnector.Events, listener: () => void): void {
-    this._emitter.on(event, listener);
-  }
-
   public get connection(): Typeorm.DataSource {
     if (!this._connection) {
-      throw new Error("Connection is not set");
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError("Database connection in typeorm ORM is not initialize.", {
+          tag: "Execution",
+          namespace: this._CONNECTOR_NAME,
+          errorType: "FATAL",
+          code: ErrorCodes.conn.TypeormConnector.CONN_NOT_SET,
+        });
     }
 
     return this._connection;

@@ -19,7 +19,11 @@ export namespace NManagerService {
   export type Scope = "auth" | "logger" | "discovery";
   export type LoginCommands = "login";
   export type LoggerCommands = "set-logger-level" | "set-logger-transport";
-  export type DiscoveryCommands = "set:logger:level" | "set:logger:transport";
+  export type DiscoveryCommands =
+    | "get-service-status"
+    | "get-service-config"
+    | "reload-core-config"
+    | "reload-scheme-config";
 
   export type ResponseKind = "ok" | "validation" | "fail";
 

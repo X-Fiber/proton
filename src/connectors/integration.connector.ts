@@ -9,6 +9,8 @@ export class IntegrationConnector
   extends AbstractConnector
   implements IIntegrationConnector
 {
+  protected readonly _CONNECTOR_NAME = IntegrationConnector.name;
+
   constructor(
     @inject(CoreSymbols.MailIntegration)
     private readonly _mailIntegration: IMailIntegration
@@ -17,10 +19,18 @@ export class IntegrationConnector
   }
 
   public async start(): Promise<void> {
-    await this._mailIntegration.start();
+    try {
+      await this._mailIntegration.start();
+    } catch (e) {
+      throw this._catchError(e, "Init");
+    }
   }
 
   public async stop(): Promise<void> {
-    await this._mailIntegration.stop();
+    try {
+      await this._mailIntegration.stop();
+    } catch (e) {
+      throw this._catchError(e, "Destroy");
+    }
   }
 }

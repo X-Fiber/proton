@@ -1,16 +1,28 @@
 import type { RabbitMQ } from "../packages";
 import type {
+  AnyFn,
   NContextService,
   NDiscoveryService,
   NSchemeService,
 } from "../fn-components";
-import type { IAbstractConnector } from "./abstract.connector";
+import type {
+  IAbstractConnector,
+  NAbstractConnector,
+} from "./abstract.connector";
 
 export interface IRabbitMQConnector extends IAbstractConnector {
   readonly connection: RabbitMQ.Connection;
+
+  on(event: NRabbitMQConnector.Events, listener: AnyFn): void;
+  once(event: NRabbitMQConnector.Events, listener: AnyFn): void;
+  off(event: NRabbitMQConnector.Events, listener: AnyFn): void;
 }
 
 export namespace NRabbitMQConnector {
+  export type Events =
+    | NAbstractConnector.Events<"RabbitMQConnector">
+    | "connector:RabbitMQConnector:subscribe.finish";
+
   export type Config = Pick<
     NDiscoveryService.CoreConfig["connectors"]["rabbitMQ"],
     | "enable"

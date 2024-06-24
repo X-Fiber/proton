@@ -1,9 +1,25 @@
 import type { IoRedis } from "../packages";
-import type { NDiscoveryService } from "../fn-components";
-import type { IAbstractConnector } from "./abstract.connector";
+import type { AnyFn, NDiscoveryService } from "../fn-components";
+import type {
+  IAbstractConnector,
+  NAbstractConnector,
+} from "./abstract.connector";
 
 export interface IRedisConnector extends IAbstractConnector {
   readonly connection: IoRedis.IoRedis;
+
+  on(
+    events: NAbstractConnector.Events<"RedisConnector">,
+    listener: AnyFn
+  ): void;
+  once(
+    events: NAbstractConnector.Events<"RedisConnector">,
+    listener: AnyFn
+  ): void;
+  off(
+    events: NAbstractConnector.Events<"RedisConnector">,
+    listener: AnyFn
+  ): void;
 }
 
 export namespace NRedisConnector {

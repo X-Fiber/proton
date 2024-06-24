@@ -4,6 +4,7 @@ export * from "./schema.headers";
 export * from "./status-code";
 export * from "./response-type";
 export * from "./core-errors";
+export * from "./default-config";
 
 export const SCHEMA_SERVICES: NSchemaLoader.ServiceStructure[] = [];
 

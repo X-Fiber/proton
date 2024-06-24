@@ -1,5 +1,6 @@
 import { bcrypt, injectable, inject, jwt, uuid, crypto } from "~packages";
 import { CoreSymbols } from "~symbols";
+import { defaultConfig } from "~common";
 import { AbstractService } from "./abstract.service";
 
 import type {
@@ -9,6 +10,7 @@ import type {
   IDiscoveryService,
   IScramblerService,
   NScramblerService,
+  ILifecycleService,
 } from "~types";
 
 @injectable()
@@ -20,6 +22,8 @@ export class ScramblerService
   protected _config: NScramblerService.Config;
 
   constructor(
+    @inject(CoreSymbols.LifecycleService)
+    protected readonly _lifecycleService: ILifecycleService,
     @inject(CoreSymbols.DiscoveryService)
     protected readonly _discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
@@ -27,15 +31,7 @@ export class ScramblerService
   ) {
     super();
 
-    this._config = {
-      enable: false,
-      salt: 5,
-      secret: "default",
-      randomBytes: 10,
-      accessExpiredAt: 10,
-      refreshExpiredAt: 30,
-      defaultAlgorithm: "MD5",
-    };
+    this._config = defaultConfig.services.scrambler;
   }
 
   private _setConfig(): NScramblerService.Config {
@@ -84,12 +80,10 @@ export class ScramblerService
   }
 
   public get accessExpiredAt(): number {
-    if (!this._config) throw this._throwConfigError();
     return this._config.accessExpiredAt * 60;
   }
 
   public get refreshExpiredAt(): number {
-    if (!this._config) throw this._throwConfigError();
     return this._config.refreshExpiredAt * 60 * 60 * 24;
   }
 
@@ -97,8 +91,6 @@ export class ScramblerService
     payload: P,
     alg?: Jwt.Algorithm
   ): NScramblerService.ConvertJwtInfo {
-    if (!this._config) throw this._throwConfigError();
-
     try {
       return this._generateToken(payload, this.accessExpiredAt, alg);
     } catch (e) {
@@ -110,8 +102,6 @@ export class ScramblerService
     payload: P,
     alg?: Jwt.Algorithm
   ): NScramblerService.ConvertJwtInfo {
-    if (!this._config) throw this._throwConfigError();
-
     try {
       return this._generateToken(payload, this.refreshExpiredAt, alg);
     } catch (e) {
@@ -124,7 +114,6 @@ export class ScramblerService
     expiresIn: number,
     alg?: Jwt.Algorithm
   ) {
-    if (!this._config) throw this._throwConfigError();
     const algorithm = alg ?? "HS256";
 
     const jwtId = uuid.v4();
@@ -148,8 +137,6 @@ export class ScramblerService
     try {
       return new Promise<NScramblerService.JwtTokenPayload<T>>(
         (resolve, reject) => {
-          if (!this._config) throw this._throwConfigError();
-
           jwt.verify(token, this._config.secret, (err, data) => {
             if (err) return reject(err);
             return resolve(data as NScramblerService.JwtTokenPayload<T>);
@@ -162,7 +149,6 @@ export class ScramblerService
   }
 
   public createHash(algorithm?: Jwt.Algorithm): string {
-    if (!this._config) throw this._throwConfigError();
     const alg = algorithm ?? (this._config.defaultAlgorithm as Jwt.Algorithm);
 
     try {
@@ -176,8 +162,6 @@ export class ScramblerService
   }
 
   public async hashPayload(password: string): Promise<string> {
-    if (!this._config) throw this._throwConfigError();
-
     try {
       return bcrypt.hash(password, this._config.salt);
     } catch (e) {
@@ -194,9 +178,5 @@ export class ScramblerService
     } catch (e) {
       throw e;
     }
-  }
-
-  private _throwConfigError(): Error {
-    return new Error("Config not set");
   }
 }

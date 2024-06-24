@@ -1,4 +1,5 @@
-import { injectable, AbstractDiscoveryService } from "~packages";
+import { injectable, inject, AbstractDiscoveryService } from "~packages";
+import { CoreSymbols } from "~symbols";
 
 import { AbstractService } from "./abstract.service";
 
@@ -7,6 +8,7 @@ import type {
   NAbstractService,
   IDiscoveryService,
   NDiscoveryService,
+  ILifecycleService,
 } from "~types";
 
 @injectable()
@@ -21,13 +23,20 @@ export class DiscoveryService
   protected readonly _discoveryService = this;
   protected readonly _loggerService = undefined;
 
+  constructor(
+    @inject(CoreSymbols.LifecycleService)
+    protected readonly _lifecycleService: ILifecycleService
+  ) {
+    super();
+  }
+
   protected async init(): Promise<boolean> {
     this._seedDiscoveryService = new AbstractDiscoveryService();
     this._seedDiscoveryService.setConfigSlice("server");
 
     try {
       await this._seedDiscoveryService.init();
-      this._emitter.emit(`service:${this._SERVICE_NAME}:start`);
+      this._lifecycleService.emit("DiscoveryService:init");
 
       return true;
     } catch (e) {
@@ -61,6 +70,10 @@ export class DiscoveryService
   public async destroy(): Promise<void> {
     this._seedDiscoveryService = undefined;
     this._serverTag = undefined;
+  }
+
+  public get config(): NDiscoveryService.CoreConfig {
+    return this._absDiscoveryService.config;
   }
 
   public getOptional<K, T extends K | undefined = K | undefined>(

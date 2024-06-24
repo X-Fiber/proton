@@ -131,7 +131,7 @@ export class SchemeLoader implements ISchemeLoader {
     for (const path in structure) {
       if (path.includes("/")) {
         throw new Error(
-          `X-Fiber system not supported dots '/'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
+          `X-Fiber system not supported dots '.'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
         );
       }
 
@@ -192,7 +192,7 @@ export class SchemeLoader implements ISchemeLoader {
     for (const path in structure) {
       if (path.includes("/")) {
         throw new Error(
-          `X-Fiber system not supported dots '/'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
+          `X-Fiber system not supported dots '.'. Please use slag string path for '${path}' path in '${domain}' domain in '${service}' service.`
         );
       }
 

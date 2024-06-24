@@ -6,3 +6,4 @@ export type * from "./context.service";
 export type * from "./schema.service";
 export type * from "./task.service";
 export type * from "./manager.service";
+export type * from "./lifecycle.service";

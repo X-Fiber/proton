@@ -1,13 +1,26 @@
 import type { Typeorm } from "../packages";
-import type { Voidable } from "../fn-components";
-import type { IAbstractConnector } from "./abstract.connector";
+import type { AnyFn } from "../fn-components";
+import type {
+  IAbstractConnector,
+  NAbstractConnector,
+} from "./abstract.connector";
 
 export interface ITypeormConnector extends IAbstractConnector {
   readonly connection: Typeorm.DataSource;
   getRepository<T>(name: string): Typeorm.Repository<T>;
 
-  emit<T>(event: NTypeormConnector.Events, data?: Voidable<T>): void;
-  on(event: NTypeormConnector.Events, listener: () => void): void;
+  on(
+    event: NAbstractConnector.Events<"TypeormConnector">,
+    listener: AnyFn
+  ): void;
+  once(
+    event: NAbstractConnector.Events<"TypeormConnector">,
+    listener: AnyFn
+  ): void;
+  off(
+    event: NAbstractConnector.Events<"TypeormConnector">,
+    listener: AnyFn
+  ): void;
 }
 
 export namespace NTypeormConnector {

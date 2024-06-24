@@ -34,8 +34,8 @@ export class MailIntegration
       secure: {
         enable: false,
         auth: {
-          user: "",
-          pass: "",
+          user: " ",
+          pass: " ",
         },
       },
       contact: {
@@ -51,7 +51,10 @@ export class MailIntegration
         "integrations.mail.enable",
         false
       ),
-      host: this._discoveryService.getString("integrations.mail.host", " "),
+      host: this._discoveryService.getString(
+        "integrations.mail.host",
+        this._config.host
+      ),
       port: this._discoveryService.getNumber("integrations.mail.port", 587),
       secure: {
         enable: this._discoveryService.getBoolean(

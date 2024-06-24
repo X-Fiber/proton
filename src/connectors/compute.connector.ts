@@ -19,6 +19,8 @@ export class ComputeConnector
   extends AbstractConnector
   implements IComputeConnector
 {
+  protected readonly _CONNECTOR_NAME = ComputeConnector.name;
+
   constructor(
     @inject(CoreSymbols.DiscoveryService)
     private readonly _discoveryService: IDiscoveryService,
@@ -41,23 +43,32 @@ export class ComputeConnector
   }
 
   public async start(): Promise<void> {
-    await this._discoveryService.start();
-    await this._loggerService.start();
-    await this._contextService.start();
-    await this._schemeService.start();
-    await this._combinationService.start();
-    await this._scramblerService.start();
-    await this._taskService.start();
-    await this._managerService.start();
+    try {
+      await this._discoveryService.start();
+      await this._loggerService.start();
+      await this._contextService.start();
+      await this._schemeService.start();
+      await this._combinationService.start();
+      await this._scramblerService.start();
+      await this._taskService.start();
+      await this._managerService.start();
+    } catch (e) {
+      this._catchError(e, "Init");
+    }
   }
+
   public async stop(): Promise<void> {
-    await this._managerService.stop();
-    await this._taskService.stop();
-    await this._scramblerService.stop();
-    await this._combinationService.stop();
-    await this._schemeService.stop();
-    await this._contextService.stop();
-    await this._loggerService.stop();
-    await this._discoveryService.stop();
+    try {
+      await this._managerService.stop();
+      await this._taskService.stop();
+      await this._scramblerService.stop();
+      await this._combinationService.stop();
+      await this._schemeService.stop();
+      await this._contextService.stop();
+      await this._loggerService.stop();
+      await this._discoveryService.stop();
+    } catch (e) {
+      this._catchError(e, "Destroy");
+    }
   }
 }

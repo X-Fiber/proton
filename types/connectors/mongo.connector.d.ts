@@ -1,13 +1,24 @@
 import type { Mongoose } from "../packages";
-import type { IAbstractConnector } from "./abstract.connector";
+import { IAbstractConnector, NAbstractConnector } from "./abstract.connector";
+import type { AnyFn } from "../fn-components";
 
 export interface IMongoConnector extends IAbstractConnector {
   readonly connection: Mongoose.Mongoose;
-  on(event: NMongodbConnector.Events, listener: (...args: any[]) => void): void;
+
+  on(event: NAbstractConnector.Events<"MongoConnector">, listener: AnyFn): void;
+  once(
+    event: NAbstractConnector.Events<"MongoConnector">,
+    listener: AnyFn
+  ): void;
+  off(
+    event: NAbstractConnector.Events<"MongoConnector">,
+    listener: AnyFn
+  ): void;
 }
 
-export namespace NMongodbConnector {
-  export type Events = "connector:MongoDbConnector:init";
+export namespace NMongoConnector {
+  export type Events = NAbstractConnector.Events<"MongoConnector">;
+
   export type Config = {
     enable: boolean;
     database: string;

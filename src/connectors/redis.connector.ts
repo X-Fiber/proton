@@ -1,13 +1,16 @@
 import { injectable, inject, ioredis } from "~packages";
+import { container } from "~container";
 import { CoreSymbols } from "~symbols";
+import { ErrorCodes } from "~common";
 import { AbstractConnector } from "./abstract.connector";
 
-import type {
+import {
   IoRedis,
   IDiscoveryService,
   ILoggerService,
   IRedisConnector,
   NRedisConnector,
+  IExceptionProvider,
 } from "~types";
 
 @injectable()
@@ -15,6 +18,7 @@ export class RedisConnector
   extends AbstractConnector
   implements IRedisConnector
 {
+  protected readonly _CONNECTOR_NAME = RedisConnector.name;
   private _config: NRedisConnector.Config;
   private _connection: IoRedis.IoRedis | undefined;
 
@@ -39,8 +43,8 @@ export class RedisConnector
     };
   }
 
-  private _setConfig(): void {
-    this._config = {
+  private _setConfig(): NRedisConnector.Config {
+    return {
       enable: this._discoveryService.getBoolean(
         "connectors.redis.enable",
         this._config.enable
@@ -75,17 +79,13 @@ export class RedisConnector
   }
 
   public async start(): Promise<void> {
-    this._setConfig();
-
-    if (!this._config) {
-      throw new Error("Config is not set");
-    }
+    this._config = this._setConfig();
 
     if (!this._config.enable) {
-      this._loggerService.warn("Redis connector is disabled.", {
+      this._loggerService.warn(`${RedisConnector.name} is disabled.`, {
         tag: "Connection",
         scope: "Core",
-        namespace: "RedisConnector",
+        namespace: RedisConnector.name,
       });
       return;
     }
@@ -93,6 +93,7 @@ export class RedisConnector
     const { protocol, host, port } = this._config.connect;
     const url = `${protocol}://${host}:${port}`;
 
+    // TODO: implement advanced configuration
     const redisOptions: IoRedis.IoRedisOptions = {
       host: host,
       port: port,
@@ -102,37 +103,53 @@ export class RedisConnector
 
     try {
       this._connection = new ioredis.ioredis(url, redisOptions);
-
-      this._loggerService.system(
-        `Redis connector has been started on ${url}.`,
-        {
-          tag: "Connection",
-          scope: "Core",
-          namespace: "RedisConnector",
-        }
-      );
     } catch (e) {
-      throw e;
+      throw this._catchError(e, "Init");
     }
+
+    this._loggerService.system(
+      `${RedisConnector.name} has been started on ${url}.`,
+      {
+        tag: "Connection",
+        scope: "Core",
+        namespace: RedisConnector.name,
+      }
+    );
+
+    this._emit<"RedisConnector">("RedisConnector:init");
   }
 
   public async stop(): Promise<void> {
     if (!this._connection) return;
 
-    this._connection.disconnect();
+    try {
+      this._connection.disconnect();
+    } catch (e) {
+      this._catchError(e, "Destroy");
+    }
+
     this._connection = undefined;
     this._emitter.removeAllListeners();
 
-    this._loggerService.system(`Redis connector has been stopped.`, {
+    this._loggerService.system(`${RedisConnector.name} has been stopped.`, {
       tag: "Connection",
       scope: "Core",
-      namespace: "RedisConnector",
+      namespace: RedisConnector.name,
     });
+
+    this._emit<"RedisConnector">("RedisConnector:destroy");
   }
 
   public get connection(): IoRedis.IoRedis {
     if (!this._connection) {
-      throw new Error("Redis connection is not set");
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError("Redis connection is not initialize.", {
+          tag: "Execution",
+          namespace: this._CONNECTOR_NAME,
+          errorType: "FATAL",
+          code: ErrorCodes.conn.CATCH_ERROR,
+        });
     }
 
     return this._connection;

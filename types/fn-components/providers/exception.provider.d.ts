@@ -75,16 +75,13 @@ export namespace NExceptionProvider {
     };
   };
 
-  export type CoreErrorFormat<T extends UnknownObject = { message: string }> = {
-    code: string;
-    data: T;
-  };
+  export type ErrorTag = "Init" | "Destroy" | "Execution" | string;
 
   export type CoreError = {
     namespace: string;
     requestId?: string;
     sessionId?: string;
-    tag?: string;
+    tag?: ErrorTag;
     code?: string;
     errorType: NLoggerService.ErrorType;
   };

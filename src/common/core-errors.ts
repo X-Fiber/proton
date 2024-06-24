@@ -6,7 +6,19 @@
 / */
 
 export const ErrorCodes = {
-  conn: {},
+  conn: {
+    MongoConnector: {
+      CONN_NOT_SET: "0001.0001.0001",
+    },
+    TypeormConnector: {
+      CONN_NOT_SET: "0001.0003.0001",
+      REPO_NOT_FOUND: "0001.0003.0002",
+    },
+    RabbitMQConnector: {
+      CONN_NOT_SET: "0001.0003.0001",
+    },
+    CATCH_ERROR: "0001.9999.9999",
+  },
   fn: {
     HttpAdapter: {
       SERVICE_NOT_FOUND: "0002.0001.0001",
@@ -29,6 +41,18 @@ export const ErrorCodes = {
       UNSUPPORTED_PROTOCOL: "0002.0002.9990",
       CATCH: "0002.0002.9999",
     },
+    ContextService: {
+      NOT_INIT: "0002.0003.0001",
+    },
+    SchemaService: {
+      EMPTY_SERVICES: "0002.0004.0001",
+      COLLECTION_NOT_INIT: "0002.0004.0002",
+      SERVICE_NOT_FOUND: "0002.0004.0004",
+      DOMAIN_NOT_FOUND: "0002.0004.0004",
+      MONGO_REPO_NOT_FOUND: "0002.0004.0005",
+      VALIDATOR_NOT_SET: "0002.0004.0006",
+    },
+    CATCH_ERROR: "0002.9999.9999",
   },
   ba: {},
 } as const;
@@ -55,4 +79,7 @@ export const ManagerCodes = {
     NOT_SUPPORTED_ENTITY: "0002.0.0001",
     SUCCESS: "0002.1.0001",
   },
-};
+  discovery: {
+    SUCCESS: "0003.1.0001",
+  },
+} as const;

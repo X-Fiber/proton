@@ -93,6 +93,7 @@ export namespace NLoggerService {
   export interface CoreErrorOptions extends ScopeOptions, CoreBaseOptions {
     scope: "Core";
     errorType: ErrorType;
+    code?: string;
   }
   export interface CoreWarnOptions extends ScopeOptions, CoreBaseOptions {
     scope: "Core";

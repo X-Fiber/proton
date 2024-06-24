@@ -1,16 +1,18 @@
 import { injectable, inject, mongoose } from "~packages";
+import { container } from "~container";
 import { CoreSymbols } from "~symbols";
+import { ErrorCodes } from "~common";
 import { Guards } from "~utils";
 import { AbstractConnector } from "./abstract.connector";
 
-import type {
+import {
   Mongoose,
-  UnknownObject,
   IContextService,
   ILoggerService,
   IDiscoveryService,
   IMongoConnector,
-  NMongodbConnector,
+  NMongoConnector,
+  IExceptionProvider,
 } from "~types";
 
 @injectable()
@@ -18,8 +20,9 @@ export class MongoConnector
   extends AbstractConnector
   implements IMongoConnector
 {
+  protected readonly _CONNECTOR_NAME = MongoConnector.name;
   private _connection: Mongoose.Mongoose | undefined;
-  private _config: NMongodbConnector.Config | undefined;
+  private _config: NMongoConnector.Config;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
@@ -30,57 +33,67 @@ export class MongoConnector
     private readonly _contextService: IContextService
   ) {
     super();
+
+    this._config = {
+      enable: false,
+      connect: {
+        protocol: "mongodb",
+        host: "0.0.0.0",
+        port: 27017,
+      },
+      auth: {
+        username: "",
+        password: "",
+      },
+      database: "default",
+    };
   }
 
-  private _setConfig(): void {
-    this._config = {
+  private _setConfig(): NMongoConnector.Config {
+    return {
       enable: this._discoveryService.getBoolean(
         "connectors.mongodb.enable",
-        false
+        this._config.enable
       ),
       connect: {
         protocol: this._discoveryService.getString(
           "connectors.mongodb.connect.protocol",
-          "mongodb"
+          this._config.connect.protocol
         ),
         host: this._discoveryService.getString(
           "connectors.mongodb.connect.host",
-          "0.0.0.0"
+          this._config.connect.host
         ),
         port: this._discoveryService.getNumber(
           "connectors.mongodb.connect.port",
-          27017
+          this._config.connect.port
         ),
       },
       auth: {
         username: this._discoveryService.getString(
           "connectors.mongodb.auth.username",
-          ""
+          this._config.auth.username
         ),
         password: this._discoveryService.getString(
           "connectors.mongodb.auth.password",
-          ""
+          this._config.auth.password
         ),
       },
       database: this._discoveryService.getString(
         "connectors.mongodb.database",
-        "default"
+        this._config.database
       ),
     };
   }
 
   public async start(): Promise<void> {
-    this._setConfig();
-
-    if (!this._config) {
-      throw new Error("Config is not set");
-    }
+    this._config = this._setConfig();
 
     if (!this._config.enable) {
-      this._loggerService.warn("Mongodb connector is disabled.", {
+      this._loggerService.warn(`${MongoConnector.name} is disabled.`, {
         tag: "Connection",
         scope: "Core",
-        namespace: "MongodbConnector",
+        namespace: MongoConnector.name,
       });
       return;
     }
@@ -96,88 +109,79 @@ export class MongoConnector
       },
     };
 
+    const url = `${protocol}://${host}:${port}`;
+
     try {
-      const url = `${protocol}://${host}:${port}`;
       this._connection = await mongoose.connect(url, options);
-
-      this._connection.set("debug", true);
-      this._connection.set("debug", (collection, operation, payload) => {
-        const store = this._contextService.store;
-        this._loggerService.database({
-          namespace: MongoConnector.name,
-          databaseType: "mongodb",
-          collection: collection,
-          requestId: store.requestId,
-          service: store.service,
-          domain: store.domain,
-          action: Guards.isRoute(store) ? store.action : undefined,
-          sessionId: store.sessionId,
-          tag: "Execution",
-          event: Guards.isEvent(store) ? store.event : undefined,
-          type: Guards.isEvent(store) ? store.type : undefined,
-          scope: "Schema",
-          operation: operation,
-          payload: JSON.stringify(payload),
-        });
-      });
-
-      this._loggerService.system(
-        `Mongodb connector has been started on ${url}.`,
-        {
-          tag: "Connection",
-          scope: "Core",
-          namespace: "MongodbConnector",
-        }
-      );
     } catch (e) {
-      throw e;
-    } finally {
-      this._emit("connector:MongoDbConnector:init");
+      throw this._catchError(e, "Init");
     }
+
+    this._connection.set("debug", true);
+    this._connection.set("debug", (collection, operation, payload) => {
+      const store = this._contextService.store;
+      this._loggerService.database({
+        namespace: MongoConnector.name,
+        databaseType: "mongodb",
+        collection: collection,
+        requestId: store.requestId,
+        service: store.service,
+        domain: store.domain,
+        action: Guards.isRoute(store) ? store.action : undefined,
+        sessionId: store.sessionId,
+        tag: "Execution",
+        event: Guards.isEvent(store) ? store.event : undefined,
+        type: Guards.isEvent(store) ? store.type : undefined,
+        scope: "Schema",
+        operation: operation,
+        payload: JSON.stringify(payload),
+      });
+    });
+
+    this._loggerService.system(
+      `${MongoConnector.name} has been started on ${url}.`,
+      {
+        tag: "Connection",
+        scope: "Core",
+        namespace: MongoConnector.name,
+      }
+    );
+
+    this._emit<"MongoConnector">("MongoConnector:init");
   }
 
   public async stop(): Promise<void> {
-    this._config = undefined;
-
     if (!this._connection) return;
 
     try {
       await this._connection.disconnect();
-
-      this._loggerService.system("Mongodb connector has been stopped.", {
-        tag: "Connection",
-        scope: "Core",
-        namespace: "MongodbConnector",
-      });
     } catch (e) {
-      this._loggerService.error(e, {
-        namespace: "MongoConnector",
-        scope: "Core",
-        errorType: "FATAL",
-        tag: "Connection",
-      });
-      throw e;
-    } finally {
-      this._connection = undefined;
+      throw this._catchError(e, "Destroy");
     }
+
+    this._loggerService.system(`${MongoConnector.name} has been stopped.`, {
+      tag: "Connection",
+      scope: "Core",
+      namespace: MongoConnector.name,
+    });
+
+    this._connection = undefined;
+    this._emitter.removeAllListeners();
+    this._emit<"MongoConnector">("MongoConnector:destroy");
   }
 
   public get connection(): Mongoose.Mongoose {
     if (!this._connection) {
-      throw new Error("Connection is not set");
+      throw container
+        .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
+        .throwError("MongoDB connection not initialize.", {
+          tag: "Init",
+          namespace: MongoConnector.name,
+          errorType: "FATAL",
+          code: ErrorCodes.conn.MongoConnector.CONN_NOT_SET,
+        });
     }
 
     return this._connection;
-  }
-
-  private _emit(event: NMongodbConnector.Events, data?: UnknownObject): void {
-    this._emitter.emit(event, data);
-  }
-
-  public on(
-    event: NMongodbConnector.Events,
-    listener: (...args: any[]) => void
-  ): void {
-    this._emitter.on(event, listener);
   }
 }

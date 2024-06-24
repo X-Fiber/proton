@@ -1,6 +1,7 @@
 import { injectable, inject, rabbitMQ, uuid } from "~packages";
 import { container } from "~container";
 import { CoreSymbols } from "~symbols";
+import { ErrorCodes } from "~common";
 import { AbstractConnector } from "./abstract.connector";
 
 import type {
@@ -24,22 +25,23 @@ export class RabbitMQConnector
   extends AbstractConnector
   implements IRabbitMQConnector
 {
-  private _options: NRabbitMQConnector.Config;
+  protected readonly _CONNECTOR_NAME = RabbitMQConnector.name;
+  private _config: NRabbitMQConnector.Config;
   private _connection: RabbitMQ.Connection | undefined;
 
   constructor(
     @inject(CoreSymbols.DiscoveryService)
-    protected readonly discoveryService: IDiscoveryService,
+    private readonly discoveryService: IDiscoveryService,
     @inject(CoreSymbols.LoggerService)
-    protected readonly loggerService: ILoggerService,
+    private readonly _loggerService: ILoggerService,
     @inject(CoreSymbols.ContextService)
-    protected _contextService: IContextService,
+    private readonly _contextService: IContextService,
     @inject(CoreSymbols.SchemeService)
-    protected _schemaService: ISchemeService
+    private readonly _schemaService: ISchemeService
   ) {
     super();
 
-    this._options = {
+    this._config = {
       enable: false,
       protocol: "amqp",
       host: "0.0.0.0",
@@ -53,130 +55,146 @@ export class RabbitMQConnector
     };
   }
 
+  private _setConfig(): NRabbitMQConnector.Config {
+    return {
+      enable: this.discoveryService.getBoolean(
+        "connectors.rabbitMQ.enable",
+        this._config.enable
+      ),
+      protocol: this.discoveryService.getString(
+        "connectors.rabbitMQ.protocol",
+        this._config.protocol
+      ),
+      host: this.discoveryService.getString(
+        "connectors.rabbitMQ.host",
+        this._config.host
+      ),
+      port: this.discoveryService.getNumber(
+        "connectors.rabbitMQ.port",
+        this._config.port
+      ),
+      username: this.discoveryService.getString(
+        "connectors.rabbitMQ.username",
+        this._config.username
+      ),
+      password: this.discoveryService.getString(
+        "connectors.rabbitMQ.password",
+        this._config.password
+      ),
+      locale: this.discoveryService.getString(
+        "connectors.rabbitMQ.locale",
+        this._config.locale
+      ),
+      frameMax: this.discoveryService.getNumber(
+        "connectors.rabbitMQ.frameMax",
+        this._config.frameMax
+      ),
+      heartBeat: this.discoveryService.getNumber(
+        "connectors.rabbitMQ.heartBeat",
+        this._config.heartBeat
+      ),
+      vhost: this.discoveryService.getString(
+        "connectors.rabbitMQ.vhost",
+        this._config.vhost
+      ),
+    };
+  }
+
+  public async start(): Promise<void> {
+    this._config = this._setConfig();
+
+    if (!this._config.enable) {
+      this._loggerService.warn(`${RabbitMQConnector.name} is disabled.`, {
+        tag: "Connection",
+        scope: "Core",
+        namespace: RabbitMQConnector.name,
+      });
+      return;
+    }
+
+    rabbitMQ.connect(
+      {
+        protocol: this._config.protocol,
+        hostname: this._config.host,
+        port: this._config.port,
+        username: this._config.username,
+        password: this._config.password,
+        locale: this._config.locale,
+        frameMax: this._config.frameMax,
+        heartbeat: this._config.heartBeat,
+        vhost: this._config.vhost,
+      },
+      async (err, connection): Promise<void> => {
+        if (err) {
+          throw this._catchError(err, "Init");
+        }
+
+        if (this._connection) return;
+
+        const { protocol, host, port } = this._config;
+        this._connection = connection;
+
+        this._emit<"RabbitMQConnector">("RabbitMQConnector:init");
+
+        this._loggerService.system(
+          `${RabbitMQConnector.name} has been started on ${protocol}://${host}:${port}.`,
+          {
+            tag: "Connection",
+            scope: "Core",
+            namespace: RabbitMQConnector.name,
+          }
+        );
+
+        try {
+          await this._subscribe();
+
+          this._emit<"RabbitMQConnector">("RabbitMQConnector:subscribe");
+        } catch (e) {
+          throw this._catchError(e, "Init");
+        }
+      }
+    );
+  }
+
+  public async stop(): Promise<void> {
+    if (!this._connection) return;
+
+    this.connection.close(() => {
+      this._loggerService.system(
+        `${RabbitMQConnector.name} has been stopped.`,
+        {
+          tag: "Destroy",
+          scope: "Core",
+          namespace: RabbitMQConnector.name,
+        }
+      );
+    });
+    this._connection = undefined;
+    this._emitter.removeAllListeners();
+    this._emit<"RabbitMQConnector">("RabbitMQConnector:destroy");
+  }
+
   public get connection(): RabbitMQ.Connection {
     if (!this._connection) {
       throw container
         .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-        .throwError("RabbitMQ Connection not initialize.", {
+        .throwError("RabbitMQ connection not initialize.", {
           tag: "EXECUTION",
           namespace: RabbitMQConnector.name,
           errorType: "FATAL",
+          code: ErrorCodes.conn.RabbitMQConnector.CONN_NOT_SET,
         });
     }
 
     return this._connection;
   }
 
-  private _setConfig(): NRabbitMQConnector.Config {
-    return {
-      enable: this.discoveryService.getBoolean(
-        "connectors.rabbitMQ.enable",
-        this._options.enable
-      ),
-      protocol: this.discoveryService.getString(
-        "connectors.rabbitMQ.protocol",
-        this._options.protocol
-      ),
-      host: this.discoveryService.getString(
-        "connectors.rabbitMQ.host",
-        this._options.host
-      ),
-      port: this.discoveryService.getNumber(
-        "connectors.rabbitMQ.port",
-        this._options.port
-      ),
-      username: this.discoveryService.getString(
-        "connectors.rabbitMQ.username",
-        this._options.username
-      ),
-      password: this.discoveryService.getString(
-        "connectors.rabbitMQ.password",
-        this._options.password
-      ),
-      locale: this.discoveryService.getString(
-        "connectors.rabbitMQ.locale",
-        this._options.locale
-      ),
-      frameMax: this.discoveryService.getNumber(
-        "connectors.rabbitMQ.frameMax",
-        this._options.frameMax
-      ),
-      heartBeat: this.discoveryService.getNumber(
-        "connectors.rabbitMQ.heartBeat",
-        this._options.heartBeat
-      ),
-      vhost: this.discoveryService.getString(
-        "connectors.rabbitMQ.vhost",
-        this._options.vhost
-      ),
-    };
-  }
-
-  public async start(): Promise<void> {
-    this._options = this._setConfig();
-
-    if (!this._options.enable) return;
-
-    rabbitMQ.connect(
-      {
-        protocol: this._options.protocol,
-        hostname: this._options.host,
-        port: this._options.port,
-        username: this._options.username,
-        password: this._options.password,
-        locale: this._options.locale,
-        frameMax: this._options.frameMax,
-        heartbeat: this._options.heartBeat,
-        vhost: this._options.vhost,
-      },
-      async (err, connection): Promise<void> => {
-        if (this._connection) return;
-        const { protocol, host, port } = this._options;
-
-        if (err) {
-          throw container
-            .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-            .throwError(
-              `Failed to create RabbitMQ connection due to error: ${err}`,
-              {
-                tag: "Connection",
-                namespace: RabbitMQConnector.name,
-                errorType: "FATAL",
-              }
-            );
-        }
-
-        this._connection = connection;
-
-        this.loggerService.system(
-          `RabbitMQ connector has been started on ${protocol}://${host}:${port}.`,
-          {
-            tag: "Connection",
-            namespace: RabbitMQConnector.name,
-            scope: "Core",
-          }
-        );
-
-        await this._subscribe();
-      }
-    );
-  }
-
-  public async stop(): Promise<void> {
-    if (this._connection) {
-      this.connection.close(() => {
-        this.loggerService.system(`Mongodb connector has been stopped.`, {
-          tag: "Destroy",
-          namespace: RabbitMQConnector.name,
-          scope: "Core",
-        });
-      });
-      this._connection = undefined;
-    }
-  }
-
   protected async _subscribe(): Promise<void> {
     this.connection.createChannel((e, channel) => {
+      if (e) {
+        throw this._catchError(e, "Execution");
+      }
+
       this._schemaService.schema.forEach((sStorage, sName) => {
         sStorage.forEach((sDomain, dName) => {
           sDomain.broker.forEach((topic, queue) => {
@@ -215,7 +233,11 @@ export class RabbitMQConnector
       queue,
       async (msg): Promise<void> => {
         if (msg) {
-          await this._callHandler(msg, service, domain, queue, topic);
+          try {
+            await this._callHandler(msg, service, domain, queue, topic);
+          } catch (e) {
+            throw this._catchError(e, "Execution");
+          }
         }
       },
       cOptions
@@ -227,8 +249,9 @@ export class RabbitMQConnector
     queue: string,
     topic: NRabbitMQConnector.ExchangeTopic
   ): Promise<void> {
-    // TODO: Method not implemented
-    console.warn(channel, queue, topic);
+    throw new Error(
+      `Method not implemented. Args: ${channel}, ${queue}, ${topic}`
+    );
   }
 
   private async _callHandler(
@@ -268,20 +291,16 @@ export class RabbitMQConnector
       session: {},
     };
 
-    await this._contextService.storage.run(store, async () => {
-      try {
-        await topic.handler(msg, agents, context);
-      } catch (e) {
-        throw container
-          .get<IExceptionProvider>(CoreSymbols.ExceptionProvider)
-          .throwError(e, {
-            tag: "Execution",
-            errorType: "FAIL",
-            namespace: RabbitMQConnector.name,
-            requestId: this._contextService.store.requestId,
-            sessionId: this._contextService.store.sessionId,
-          });
-      }
-    });
+    try {
+      await this._contextService.storage.run(store, async () => {
+        try {
+          await topic.handler(msg, agents, context);
+        } catch (e) {
+          throw this._catchError(e, "Execution");
+        }
+      });
+    } catch (e) {
+      throw this._catchError(e, "Execution");
+    }
   }
 }
